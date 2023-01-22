@@ -24,7 +24,10 @@ fea.set_variables(
         },
     ]
 )
+
 # setup the FEA
 fea.setup_fea(fea_results_name="CCX_Results", solver_name="SolverCcxTools")
-fea.run_parametric()
+results = fea.run_parametric()
 fea.plot_fea_results()
+
+print(results)

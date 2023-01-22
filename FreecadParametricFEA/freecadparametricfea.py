@@ -68,17 +68,20 @@ class FreecadParametricFEA:
                         self.results_dataframe,
                         pd.DataFrame(
                             {
-                                "Target_Value": target_value,
-                                "vonMises_Max": max(fea_results_obj.vonMises),
-                                "displacement_Max": max(
-                                    fea_results_obj.DisplacementLengths
-                                ),
-                                "FEA_runtime": fea_runtime,
+                                "Target_Value": [target_value],
+                                "vonMises_Max": [
+                                    max(fea_results_obj.vonMises)
+                                ],
+                                "displacement_Max": [
+                                    max(fea_results_obj.DisplacementLengths)
+                                ],
+                                "FEA_runtime": [fea_runtime],
                             },
-                            index=[target_value],  # this will need to change!
                         ),
-                    ]
+                    ],
+                    ignore_index=True,
                 )
+        return self.results_dataframe
 
     def plot_fea_results(self):
         fig = make_subplots(specs=[[{"secondary_y": True}]])
