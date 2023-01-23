@@ -2,20 +2,30 @@ import sys
 import time
 import pandas as pd
 
+
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# TODO: move this elsewhere
-FREECADPATH = "C:\\Program Files\\FreeCAD 0.20\\bin"
-sys.path.append(FREECADPATH)
 
-import FreeCAD
-from femtools import ccxtools
+def _register_freecad(freecad_path: str) -> None:
+    if freecad_path is not None and freecad_path not in sys.path:
+        sys.path.append(freecad_path)
+
+    try:
+        global FreeCAD, femtools
+        FreeCAD = __import__("FreeCAD", globals(), locals())
+        femtools = __import__("femtools.ccxtools", globals(), locals())
+    except ImportError as err:
+        raise ImportError(
+            f"{freecad_path} does not contain the FreeCAD Python libraries"
+        ) from err
 
 
 class FreecadParametricFEA:
-    def __init__(self) -> None:
+    def __init__(self, freecad_path: str) -> None:
         # try and find the FreeCAD path
+        _register_freecad(freecad_path=freecad_path)
+
         self.results_dataframe = pd.DataFrame()
         pass
 
@@ -69,9 +79,7 @@ class FreecadParametricFEA:
                         pd.DataFrame(
                             {
                                 "Target_Value": [target_value],
-                                "vonMises_Max": [
-                                    max(fea_results_obj.vonMises)
-                                ],
+                                "vonMises_Max": [max(fea_results_obj.vonMises)],
                                 "displacement_Max": [
                                     max(fea_results_obj.DisplacementLengths)
                                 ],
@@ -175,7 +183,7 @@ class FreecadModel:
         """
         solver_object = self.model.getObject(solver_name)
 
-        fea = ccxtools.FemToolsCcx(solver=solver_object)
+        fea = femtools.ccxtools.FemToolsCcx(solver=solver_object)
         fea.purge_results()
         fea.reset_all()
         fea.update_objects()

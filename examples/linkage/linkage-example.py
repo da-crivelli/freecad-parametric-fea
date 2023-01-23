@@ -9,8 +9,10 @@ Runs a static analysis and extracts the max. Von Mises stress
 and max deflection.
 """
 
+FREECAD_PATH = "C:\\Program Files\\FreeCAD 0.20\\bin"
+
 # initialise the parametric FEA object
-fea = pfea()
+fea = pfea(freecad_path=FREECAD_PATH)
 # set a path to the FreeCAD model
 script_path = path.dirname(path.realpath(__file__))
 fea.set_model(path.join(script_path, "linkage-example.fcstd"))
