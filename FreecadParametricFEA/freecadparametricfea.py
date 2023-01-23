@@ -10,7 +10,8 @@ from plotly.subplots import make_subplots
 def _register_freecad(freecad_path: str) -> None:
     if freecad_path is not None and freecad_path not in sys.path:
         sys.path.append(freecad_path)
-
+    # TODO: should automagically try to find freecad in the usual suspect folders;
+    # it should also automatically add /bin if the user didn't specify it
     try:
         global FreeCAD, femtools
         FreeCAD = __import__("FreeCAD", globals(), locals())
@@ -134,6 +135,12 @@ class FreecadParametricFEA:
         fig.update_yaxes(title_text="Max. displacement (mm)", secondary_y=True)
 
         fig.show()
+
+    def save_fea_results(self, results_filename: str, mode: str = "csv") -> None:
+        if mode == "csv":
+            self.results_dataframe.to_csv(results_filename)
+        else:
+            raise NotImplementedError("Export mode {} not yet implemented".format(mode))
 
 
 class FreecadModel:
