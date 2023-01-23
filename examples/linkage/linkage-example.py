@@ -5,7 +5,7 @@ from FreecadParametricFEA import FreecadParametricFEA as pfea
 
 """
 A single parameter sweep on a simple 3D linkage model.
-Runs a static analysis and extracts the max. Von Mises stress 
+Runs a static analysis and extracts the max. Von Mises stress
 and max deflection.
 """
 
@@ -32,5 +32,5 @@ fea.setup_fea(fea_results_name="CCX_Results", solver_name="SolverCcxTools")
 results = fea.run_parametric()
 fea.plot_fea_results()
 
-fea.save_fea_results(path.join(script_path, "linkage-results.csv"))
+# fea.save_fea_results(path.join(script_path, "linkage-results.csv"))
 print(results)

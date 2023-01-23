@@ -1,7 +1,16 @@
+"""FreecadModel object and helpers"""
 import sys
 
 
 def _register_freecad(freecad_path: str) -> None:
+    """registers the freecad path and femtools in os.PATH
+
+    Args:
+        freecad_path (str): path to the local FreeCAD installation
+
+    Raises:
+        ImportError: if the specified folder does not contain the FreeCAD Python libraries
+    """
     if freecad_path is not None and freecad_path not in sys.path:
         sys.path.append(freecad_path)
     # TODO: should automagically try to find freecad in the usual suspect folders;
@@ -17,7 +26,15 @@ def _register_freecad(freecad_path: str) -> None:
 
 
 class FreecadModel:
+    """FreecadModel class"""
+
     def __init__(self, document_path: str, freecad_path: str) -> None:
+        """initialises a FreecadModel object
+
+        Args:
+            document_path (str): path to the FreeCAD file
+            freecad_path (str): path to the FreeCAD Python libraries
+        """
         self.filename = document_path
         _register_freecad(freecad_path=freecad_path)
         self.model = FreeCAD.open(document_path)
