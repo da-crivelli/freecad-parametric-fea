@@ -58,6 +58,19 @@ class FreecadParametricFEA:
         """
         self.variables = variables
 
+    def set_outputs(self, outputs: list):
+        """Sets the variables to return as an output.
+
+        Args:
+            variables (list of dict): a list of dictionaries. The dictionaries must contain:
+                "output_var" (str): the output variable (must be available in the freecad fea results object),
+                "reduction_fun" (function handle): a handle to the data reduction function (e.g. np.max)
+        """
+        Warning(
+            "set_outputs() is not functioning yet - requested outputs ignored"
+        )
+        self.outputs = outputs
+
     def setup_fea(self, fea_results_name: str, solver_name: str):
         """sets up the FEA analysis object
 
@@ -118,6 +131,9 @@ class FreecadParametricFEA:
                 )
                 fea_runtime = time.process_time() - start_time
 
+                for output in self.outputs:
+                    pass
+
                 # adding results to a Pandas dataframe
                 self.results_dataframe = pd.concat(
                     [
@@ -125,7 +141,9 @@ class FreecadParametricFEA:
                         pd.DataFrame(
                             {
                                 "Target_Value": [target_value],
-                                "vonMises_Max": [max(fea_results_obj.vonMises)],
+                                "vonMises_Max": [
+                                    max(fea_results_obj.vonMises)
+                                ],
                                 "displacement_Max": [
                                     max(fea_results_obj.DisplacementLengths)
                                 ],
@@ -216,7 +234,9 @@ class FreecadParametricFEA:
 
         fig.show()
 
-    def save_fea_results(self, results_filename: str, mode: str = "csv") -> None:
+    def save_fea_results(
+        self, results_filename: str, mode: str = "csv"
+    ) -> None:
         """Saves the results of the analysis to a file.
 
         Args:
@@ -230,4 +250,6 @@ class FreecadParametricFEA:
         if mode == "csv":
             self.results_dataframe.to_csv(results_filename)
         else:
-            raise NotImplementedError(f"Export mode {mode} not yet implemented")
+            raise NotImplementedError(
+                f"Export mode {mode} not yet implemented"
+            )
