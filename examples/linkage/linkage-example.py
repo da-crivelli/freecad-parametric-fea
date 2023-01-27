@@ -22,8 +22,22 @@ fea.set_variables(
         {
             "object_name": "Pocket",
             "constraint_name": "Spacing",
-            "constraint_values": np.arange(15, 30, 3),
+            "constraint_values": np.linspace(15, 30, 5),
         },
+        # {
+        #     "object_name": "Pocket2",
+        #     "constraint_name": "Spacing2",
+        #     "constraint_values": np.linspace(1, 3, 6),
+        # },
+    ]
+)
+
+fea.set_outputs(
+    [
+        {
+            "output_var": "vonMises",
+            "reduction_fun": np.max,
+        }
     ]
 )
 
