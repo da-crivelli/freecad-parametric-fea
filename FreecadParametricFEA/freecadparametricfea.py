@@ -2,8 +2,10 @@
 such as handling parameters and displaying results.
 """
 import time
+import warnings
 from typing import Union
 import pandas as pd
+import numpy as np
 
 
 import plotly.graph_objects as go
@@ -22,7 +24,8 @@ class FreecadParametricFEA:
             freecad_path (str): path to the local FreeCAD installation.
         """
         self.freecad_document = None
-        self.variables = None
+        self.variables = []
+        self.outputs = []
         self.fea_results_name = None
         self.solver_name = None
 
@@ -45,7 +48,7 @@ class FreecadParametricFEA:
             self.freecad_document = freecad_document
 
     def set_variables(self, variables: list):
-        """Sets the variables to optimise over.
+        """Sets the variables to run the batch analysis over.
 
         Args:
             variables (list of dict): a list of dictionaries. The dictionaries must contain:
@@ -86,7 +89,19 @@ class FreecadParametricFEA:
         # e.g. "all" (full sampling), and other useful stuff like latin
         # hypercube sampling, random sampling, adaptive sampling...
 
-        # change the target parameter in the CAD model
+        # change the target parameter in the CAD model.
+        # as it stands it won't really support two parameters...
+        # what if
+        #  - create a dataframe with the parameters first
+        #  - ran a single loop of all analyses over the dataframe
+        #  - updated the dataframe?
+
+        self.results_dataframe = self.populate_test_dataframe(
+            self.variables, self.outputs
+        )
+
+        print(self.results_dataframe)
+
         for parameter in self.variables:
             for target_value in parameter["constraint_values"]:
                 self.freecad_document.change_parameter(
@@ -121,6 +136,45 @@ class FreecadParametricFEA:
                     ignore_index=True,
                 )
         return self.results_dataframe
+
+    def populate_test_dataframe(self, variables, outputs) -> pd.DataFrame:
+        """Populates FreecadParametricFEA.results_dataframe with the test matrix
+        to be run by the FEA batch. Uses self.variables and self.results.
+
+        Args:
+            variables (list): variables as defined in set_variables()
+
+        Returns:
+            pd.DataFrame: dataframe with test conditions and empty results columns
+        """
+        param_vals = []
+        param_headings = []
+        output_headings = []
+
+        for parameter in variables:
+            param_vals.append(parameter["constraint_values"])
+            param_headings.append(
+                parameter["object_name"] + "." + parameter["constraint_name"]
+            )
+
+        # TODO: use real outputs later
+        output_headings = ["vonMises", "DisplacementLenghts"]
+        warnings.warn(
+            "set_outputs() is not functioning yet - requested outputs ignored"
+        )
+
+        # Build list of n-param values
+        grid = np.meshgrid(*param_vals)
+        grid_list = list(x.ravel() for x in grid)
+        param_values_ndim = np.column_stack(grid_list)
+
+        empty_results = np.zeros((len(grid_list[0]), len(output_headings) + 1))
+        param_values_all = np.column_stack((param_values_ndim, empty_results))
+
+        return pd.DataFrame(
+            data=param_values_all,
+            columns=[*param_headings, *output_headings, "FEA_runtime"],
+        )
 
     def plot_fea_results(self):
         """Plots the FEM analysis results using Plotly"""
