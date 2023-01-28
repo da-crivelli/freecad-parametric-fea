@@ -1,5 +1,6 @@
-"""Provides a FreecadParametricFEA class to handle higher level parametric FEA functions,
-such as handling parameters and displaying results.
+"""Provides a FreecadParametricFEA class to handle higher
+level parametric FEA functions, such as handling parameters 
+and displaying results.
 """
 import time
 import warnings
@@ -26,8 +27,8 @@ class FreecadParametricFEA:
         self.freecad_document = None
         self.variables = []
         self.outputs = []
-        self.fea_results_name = None
-        self.solver_name = None
+        self.fea_results_name = ""
+        self.solver_name = ""
 
         self.freecad_path = freecad_path
 
@@ -37,8 +38,8 @@ class FreecadParametricFEA:
         """opens the freecad document and loads it
 
         Args:
-            freecad_document (str or FreecadModel): path to the FreeCAD document, or a
-                FreecadModel object
+            freecad_document (str or FreecadModel): path to the
+            FreeCAD document, or a FreecadModel object
         """
         if isinstance(freecad_document, str):
             self.freecad_document = FreecadModel(
@@ -51,10 +52,12 @@ class FreecadParametricFEA:
         """Sets the variables to run the batch analysis over.
 
         Args:
-            variables (list of dict): a list of dictionaries. The dictionaries must contain:
-                "object_name" (str): the object where the constraint is contained,
-                "constraint_name" (str): the name of the constraint to modify,
-                "constraint_values" (list of values): the values that the variable can assume
+            variables (list of dict): a list of dictionaries. The dictionaries
+              must contain:
+                "object_name" (str): the object where the constraint is in,
+                "constraint_name" (str): the name of the constraint to modify
+                "constraint_values" (list of values): the values that the
+                    variable can assume
         """
         self.variables = variables
 
@@ -62,9 +65,12 @@ class FreecadParametricFEA:
         """Sets the variables to return as an output.
 
         Args:
-            variables (list of dict): a list of dictionaries. The dictionaries must contain:
-                "output_var" (str): the output variable (must be available in the freecad fea results object),
-                "reduction_fun" (function handle): a handle to the data reduction function (e.g. np.max)
+            variables (list of dict): a list of dictionaries. The dictionaries
+            must contain:
+                "output_var" (str): the output variable (must be available in
+                    the freecad fea results object),
+                "reduction_fun" (function handle): a handle to the data
+                    reduction function (e.g. np.max)
         """
         Warning(
             "set_outputs() is not functioning yet - requested outputs ignored"
@@ -75,15 +81,16 @@ class FreecadParametricFEA:
         """sets up the FEA analysis object
 
         Args:
-            fea_results_name (str): name of the results object in the document, e.g. CCX_Results
-            solver_name (str): name of the solver object in the document, e.g. SolverCcxTools
+            fea_results_name (str): name of the results object in the document
+                e.g. CCX_Results
+            solver_name (str): name of the solver object in the document
+                e.g. SolverCcxTools
         """
         self.fea_results_name = fea_results_name
         self.solver_name = solver_name
 
     def run_fea(self):
         """Runs the FEM analysis
-
         Returns:
            fea object: a FreeCAD object containing the FEA results
         """
@@ -160,14 +167,16 @@ class FreecadParametricFEA:
         return self.results_dataframe
 
     def populate_test_dataframe(self, variables, outputs) -> pd.DataFrame:
-        """Populates FreecadParametricFEA.results_dataframe with the test matrix
-        to be run by the FEA batch. Uses self.variables and self.results.
+        """Populates FreecadParametricFEA.results_dataframe with the
+        test matrix to be run by the FEA batch. Uses self.variables
+        and self.results.
 
         Args:
             variables (list): variables as defined in set_variables()
 
         Returns:
-            pd.DataFrame: dataframe with test conditions and empty results columns
+            pd.DataFrame: dataframe with test conditions and empty
+                results columns
         """
         param_vals = []
         param_headings = []
