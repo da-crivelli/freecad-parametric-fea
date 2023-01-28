@@ -6,6 +6,7 @@
 Simple n-parameter FEA with minimal output control 
 
 ### TODO
+- add option to save the results in the active document
 - error handling in model and output dataframe
 - make the outputs scriptable / selectable
 - describe how to run the example; better README
