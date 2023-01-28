@@ -54,19 +54,36 @@ class FreecadModel:
             target_value (float): target value for the constraint
         """
 
-        target_sketch = self.model.getObject(object_name).Profile[0]
+        target_object = self.model.getObjectsByLabel(object_name)
+        if not target_object:
+            raise KeyError(f"Unable to find object {object_name} in the model")
 
-        # loop over constraints to find the target
-        edge_idx = None
-        for (edge_idx, constraint) in enumerate(target_sketch.Constraints):
-            if constraint.Name == constraint_name:
-                break
+        # FIXME: this should really be done via type checking
+        try:
+            isSketch = str(target_object[0]) == "<Sketcher::SketchObject>"
+            if isSketch:
+                target_object[0].getDatum(constraint_name)
+            else:
+                getattr(target_object[0], constraint_name)
+            # TODO: if setting a Feature.param, needs to be addressed directly
+            # as getattr(target_object[0], constraint_name).
 
-        # set the datum to the desired value
-        target_sketch.setDatum(edge_idx, target_value)
+        except NameError:
+            raise NameError(
+                f"Invalid constraint name {constraint_name} in object {object_name}"
+            )
+
+        # set the datum to the desired value.
+        # TODO: needs to be done via setattr() if setting a feature.param
+        if isSketch:
+            target_object[0].setDatum(constraint_name, target_value)
+        else:
+            setattr(target_object[0], constraint_name, target_value)
 
         # apply changes and recompute
         self.model.recompute()
+
+        # TODO: check for model errors here
 
     def run_fea(self, solver_name: str, fea_results_name: str):
         """runs a FEA analysis in the specified freecad document

@@ -20,15 +20,10 @@ fea.set_model(path.join(script_path, "linkage-example.fcstd"))
 fea.set_variables(
     [
         {
-            "object_name": "Pocket",
+            "object_name": "PocketSketch",
             "constraint_name": "Spacing",
-            "constraint_values": np.linspace(15, 30, 5),
+            "constraint_values": np.linspace(15, 30, 3),
         },
-        # {
-        #     "object_name": "Pocket2",
-        #     "constraint_name": "Spacing2",
-        #     "constraint_values": np.linspace(1, 3, 6),
-        # },
     ]
 )
 
@@ -37,15 +32,20 @@ fea.set_outputs(
         {
             "output_var": "vonMises",
             "reduction_fun": np.max,
-        }
+        },
+        {
+            "output_var": "DisplacementLengths",
+            "reduction_fun": np.max,
+        },
     ]
 )
 
 # setup the FEA
 fea.setup_fea(fea_results_name="CCX_Results", solver_name="SolverCcxTools")
-results = fea.run_parametric(dry_run=True)
+# results = fea.run_parametric(dry_run=True)
+results = fea.run_parametric()
 
-# fea.plot_fea_results()
+fea.plot_fea_results()
 
 # fea.save_fea_results(path.join(script_path, "linkage-results.csv"))
 print(results)

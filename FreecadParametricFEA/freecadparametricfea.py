@@ -123,47 +123,43 @@ class FreecadParametricFEA:
             self.variables, self.outputs
         )
 
-        for parameter in self.variables:
-            for target_value in parameter["constraint_values"]:
+        # iterate over all test cases
+        for test_case_idx, test_case_data in self.results_dataframe.iterrows():
+            # change each parameter to the value specified in the pd column:
+            for parameter in self.variables:
+                df_heading = self.param_to_df_heading(parameter)
+
                 self.freecad_document.change_parameter(
                     object_name=parameter["object_name"],
                     constraint_name=parameter["constraint_name"],
-                    target_value=target_value,
+                    target_value=test_case_data[df_heading],
                 )
 
-                # run (& time) the FEA
-                if not dry_run:
-                    start_time = time.process_time()
-                    fea_results_obj = self.freecad_document.run_fea(
-                        solver_name=self.solver_name,
-                        fea_results_name=self.fea_results_name,
-                    )
-                    fea_runtime = time.process_time() - start_time
+            # run (& time) the FEA
+            if not dry_run:
+                start_time = time.process_time()
+                fea_results_obj = self.freecad_document.run_fea(
+                    solver_name=self.solver_name,
+                    fea_results_name=self.fea_results_name,
+                )
+                fea_runtime = time.process_time() - start_time
 
-                    for output in self.outputs:
-                        pass
+                for output in self.outputs:
+                    pass
 
-                    # adding results to a Pandas dataframe
-                    self.results_dataframe = pd.concat(
-                        [
-                            self.results_dataframe,
-                            pd.DataFrame(
-                                {
-                                    "Target_Value": [target_value],
-                                    "vonMises_Max": [
-                                        max(fea_results_obj.vonMises)
-                                    ],
-                                    "displacement_Max": [
-                                        max(
-                                            fea_results_obj.DisplacementLengths
-                                        )
-                                    ],
-                                    "FEA_runtime": [fea_runtime],
-                                },
-                            ),
-                        ],
-                        ignore_index=True,
-                    )
+                # adding results to a Pandas dataframe
+                self.results_dataframe.loc[test_case_idx, "vonMises"] = max(
+                    fea_results_obj.vonMises
+                )
+
+                self.results_dataframe.loc[
+                    test_case_idx, "DisplacementLengths"
+                ] = max(fea_results_obj.DisplacementLengths)
+
+                self.results_dataframe.loc[
+                    test_case_idx, "FEA_runtime"
+                ] = fea_runtime
+
         return self.results_dataframe
 
     def populate_test_dataframe(self, variables, outputs) -> pd.DataFrame:
@@ -177,6 +173,8 @@ class FreecadParametricFEA:
         Returns:
             pd.DataFrame: dataframe with test conditions and empty
                 results columns
+            param_headings: headings in the dataframe related to the variables
+            output_headings: headings in the dataframe related to the output
         """
         param_vals = []
         param_headings = []
@@ -184,12 +182,10 @@ class FreecadParametricFEA:
 
         for parameter in variables:
             param_vals.append(parameter["constraint_values"])
-            param_headings.append(
-                parameter["object_name"] + "." + parameter["constraint_name"]
-            )
+            param_headings.append(self.param_to_df_heading(parameter))
 
         # TODO: use real outputs later
-        output_headings = ["vonMises", "DisplacementLenghts"]
+        output_headings = ["vonMises", "DisplacementLengths"]
         warnings.warn(
             "set_outputs() is not functioning yet - requested outputs ignored"
         )
@@ -266,3 +262,6 @@ class FreecadParametricFEA:
             raise NotImplementedError(
                 f"Export mode {mode} not yet implemented"
             )
+
+    def param_to_df_heading(self, parameter) -> str:
+        return parameter["object_name"] + "." + parameter["constraint_name"]
