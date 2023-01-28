@@ -92,9 +92,12 @@ class FreecadParametricFEA:
             fea_results_name=self.fea_results_name,
         )
 
-    def run_parametric(self) -> pd.DataFrame:
+    def run_parametric(self, dry_run: bool = False) -> pd.DataFrame:
         """runs the parametric sweep and returns the results
 
+        Args:
+            ?dry_run (bool): Doesn't run the FEA, but checks for model issues.
+                Defaults to False
         Returns:
             pd.DataFrame: Pandas dataframe containing the results
         """
@@ -113,8 +116,6 @@ class FreecadParametricFEA:
             self.variables, self.outputs
         )
 
-        print(self.results_dataframe)
-
         for parameter in self.variables:
             for target_value in parameter["constraint_values"]:
                 self.freecad_document.change_parameter(
@@ -124,35 +125,38 @@ class FreecadParametricFEA:
                 )
 
                 # run (& time) the FEA
-                start_time = time.process_time()
-                fea_results_obj = self.freecad_document.run_fea(
-                    solver_name=self.solver_name,
-                    fea_results_name=self.fea_results_name,
-                )
-                fea_runtime = time.process_time() - start_time
+                if not dry_run:
+                    start_time = time.process_time()
+                    fea_results_obj = self.freecad_document.run_fea(
+                        solver_name=self.solver_name,
+                        fea_results_name=self.fea_results_name,
+                    )
+                    fea_runtime = time.process_time() - start_time
 
-                for output in self.outputs:
-                    pass
+                    for output in self.outputs:
+                        pass
 
-                # adding results to a Pandas dataframe
-                self.results_dataframe = pd.concat(
-                    [
-                        self.results_dataframe,
-                        pd.DataFrame(
-                            {
-                                "Target_Value": [target_value],
-                                "vonMises_Max": [
-                                    max(fea_results_obj.vonMises)
-                                ],
-                                "displacement_Max": [
-                                    max(fea_results_obj.DisplacementLengths)
-                                ],
-                                "FEA_runtime": [fea_runtime],
-                            },
-                        ),
-                    ],
-                    ignore_index=True,
-                )
+                    # adding results to a Pandas dataframe
+                    self.results_dataframe = pd.concat(
+                        [
+                            self.results_dataframe,
+                            pd.DataFrame(
+                                {
+                                    "Target_Value": [target_value],
+                                    "vonMises_Max": [
+                                        max(fea_results_obj.vonMises)
+                                    ],
+                                    "displacement_Max": [
+                                        max(
+                                            fea_results_obj.DisplacementLengths
+                                        )
+                                    ],
+                                    "FEA_runtime": [fea_runtime],
+                                },
+                            ),
+                        ],
+                        ignore_index=True,
+                    )
         return self.results_dataframe
 
     def populate_test_dataframe(self, variables, outputs) -> pd.DataFrame:
