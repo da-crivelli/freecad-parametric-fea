@@ -9,8 +9,7 @@ import pandas as pd
 import numpy as np
 
 
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+import plotly.express as px
 
 from .freecadmodel import FreecadModel
 
@@ -205,43 +204,44 @@ class FreecadParametricFEA:
 
     def plot_fea_results(self):
         """Plots the FEM analysis results using Plotly"""
-        fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-        fig.add_trace(
-            go.Scatter(
-                x=self.results_dataframe["Target_Value"],
-                y=self.results_dataframe["vonMises_Max"],
-                name="Max. Von Mises (MPa)",
-            ),
-            secondary_y=False,
-        )
+        for output in self.outputs:
+            if (len(self.variables)) == 1:
+                fig = px.line(
+                    self.results_dataframe,
+                    x=self.param_to_df_heading(self.variables[0]),
+                    y=output["output_var"],
+                )
+            elif (len(self.variables)) == 2:
+                fig = px.line(
+                    self.results_dataframe,
+                    x=self.param_to_df_heading(self.variables[0]),
+                    y=output["output_var"],
+                    color=self.param_to_df_heading(self.variables[1]),
+                )
+            else:
+                raise NotImplementedError(
+                    "Plotting more than 2 variables not supported yet"
+                )
 
-        fig.add_trace(
-            go.Scatter(
-                x=self.results_dataframe["Target_Value"],
-                y=self.results_dataframe["displacement_Max"],
-                name="Max. displacement (mm)",
-            ),
-            secondary_y=True,
-        )
+            # Set x-axis title
+            # TODO: find these from the objects or pass as parameters
+            constraint_name = "CHANGE_ME"
+            constraint_units = "CHANGE_ME"
+            # these will definitely need to change
+            # fig.update_xaxes(
+            #     title_text=f"{constraint_name} ({constraint_units})"
+            # )
 
-        # Add figure title
-        fig.update_layout(
-            title_text=f"FreeCAD optimisation on {self.freecad_document.filename}"
-        )
+            # # Set y-axes titles
+            # fig.update_yaxes(
+            #     title_text="Max. Von Mises (MPa)", secondary_y=False
+            # )
+            # fig.update_yaxes(
+            #     title_text="Max. displacement (mm)", secondary_y=True
+            # )
 
-        # Set x-axis title
-        # TODO: find these from the objects or pass as parameters
-        constraint_name = "CHANGE_ME"
-        constraint_units = "CHANGE_ME"
-        # these will definitely need to change
-        fig.update_xaxes(title_text=f"{constraint_name} ({constraint_units})")
-
-        # Set y-axes titles
-        fig.update_yaxes(title_text="Max. Von Mises (MPa)", secondary_y=False)
-        fig.update_yaxes(title_text="Max. displacement (mm)", secondary_y=True)
-
-        fig.show()
+            fig.show()
 
     def save_fea_results(
         self, results_filename: str, mode: str = "csv"
