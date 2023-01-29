@@ -137,27 +137,33 @@ class FreecadParametricFEA:
             # run (& time) the FEA
             if not dry_run:
                 start_time = time.process_time()
-                fea_results_obj = self.freecad_document.run_fea(
-                    solver_name=self.solver_name,
-                    fea_results_name=self.fea_results_name,
-                )
-                fea_runtime = time.process_time() - start_time
 
-                for output in self.outputs:
-                    pass
+                try:
+                    fea_results_obj = self.freecad_document.run_fea(
+                        solver_name=self.solver_name,
+                        fea_results_name=self.fea_results_name,
+                    )
 
-                # adding results to a Pandas dataframe
-                self.results_dataframe.loc[test_case_idx, "vonMises"] = max(
-                    fea_results_obj.vonMises
-                )
+                    fea_runtime = time.process_time() - start_time
 
-                self.results_dataframe.loc[
-                    test_case_idx, "DisplacementLengths"
-                ] = max(fea_results_obj.DisplacementLengths)
+                    for output in self.outputs:
+                        pass
 
-                self.results_dataframe.loc[
-                    test_case_idx, "FEA_runtime"
-                ] = fea_runtime
+                    # adding results to a Pandas dataframe
+                    self.results_dataframe.loc[test_case_idx, "vonMises"] = max(
+                        fea_results_obj.vonMises
+                    )
+
+                    self.results_dataframe.loc[
+                        test_case_idx, "DisplacementLengths"
+                    ] = max(fea_results_obj.DisplacementLengths)
+
+                    self.results_dataframe.loc[
+                        test_case_idx, "FEA_runtime"
+                    ] = fea_runtime
+
+                except RuntimeError as e:
+                    self.results_dataframe.loc[test_case_idx, "Msg"] = str(e)
 
         return self.results_dataframe
 
@@ -194,13 +200,15 @@ class FreecadParametricFEA:
         grid_list = list(x.ravel() for x in grid)
         param_values_ndim = np.column_stack(grid_list)
 
-        empty_results = np.zeros((len(grid_list[0]), len(output_headings) + 1))
+        empty_results = np.empty((len(grid_list[0]), len(output_headings) + 1))
         param_values_all = np.column_stack((param_values_ndim, empty_results))
 
-        return pd.DataFrame(
+        df = pd.DataFrame(
             data=param_values_all,
             columns=[*param_headings, *output_headings, "FEA_runtime"],
         )
+        df["Msg"] = ""
+        return df
 
     def plot_fea_results(self):
         """Plots the FEM analysis results using Plotly"""

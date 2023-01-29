@@ -107,8 +107,10 @@ class FreecadModel:
         # there should be some error handling here
         fea.check_prerequisites()
         fea.run()
-
-        return self.model.getObject(fea_results_name)
+        if fea.results_present:
+            return self.model.getObject(fea_results_name)
+        else:
+            raise RuntimeError("FEA results are not present")
 
     def make_snapshot(self):
         # inspired from
