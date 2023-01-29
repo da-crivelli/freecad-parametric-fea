@@ -11,6 +11,7 @@ Simple n-parameter FEA with minimal output control
 - make the outputs scriptable / selectable
 - describe how to run the example; better README
 - try and suppress the ccx output
+- make package installable via pypi
 
 ### DONE
 - :white_check_mark: move FREECADPATH into init.py & autodiscover 
