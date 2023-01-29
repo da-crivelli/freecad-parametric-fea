@@ -27,7 +27,7 @@ fea.set_variables(
         {
             "object_name": "CutsSketch",
             "constraint_name": "NotchDiam",
-            "constraint_values": np.linspace(5, 10, 5),
+            "constraint_values": np.linspace(5, 9, 5),
         },
     ]
 )
@@ -48,5 +48,5 @@ results = fea.run_parametric()
 
 fea.plot_fea_results()
 
-fea.save_fea_results(path.join(script_path, "linkage-results.csv"))
+fea.save_fea_results(path.join(script_path, "notch-results.csv"))
 print(results)
