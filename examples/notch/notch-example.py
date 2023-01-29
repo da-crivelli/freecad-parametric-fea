@@ -22,12 +22,12 @@ fea.set_variables(
         {
             "object_name": "CutsSketch",
             "constraint_name": "NotchDistance",
-            "constraint_values": np.linspace(10, 20, 6),
+            "constraint_values": np.linspace(10, 30, 10),
         },
         {
             "object_name": "CutsSketch",
             "constraint_name": "NotchDiam",
-            "constraint_values": np.linspace(5, 8, 6),
+            "constraint_values": np.linspace(5, 10, 5),
         },
     ]
 )
