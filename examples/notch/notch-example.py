@@ -43,8 +43,8 @@ fea.set_outputs(
 
 # setup the FEA
 fea.setup_fea(fea_results_name="CCX_Results", solver_name="SolverCcxTools")
-# results = fea.run_parametric(dry_run=True)
-results = fea.run_parametric()
+results = fea.run_parametric(export_results=True)
+# results = fea.run_parametric()
 
 fea.plot_fea_results()
 

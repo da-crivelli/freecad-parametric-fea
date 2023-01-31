@@ -1,6 +1,5 @@
 """FreecadModel object and helpers"""
 import sys
-from pivy import coin
 
 
 def _register_freecad(freecad_path: str) -> None:
@@ -20,6 +19,7 @@ def _register_freecad(freecad_path: str) -> None:
         global FreeCAD, femtools
         FreeCAD = __import__("FreeCAD", globals(), locals())
         femtools = __import__("femtools.ccxtools", globals(), locals())
+
     except ImportError as err:
         raise ImportError(
             f"{freecad_path} does not contain the FreeCAD Python libraries"
@@ -98,6 +98,8 @@ class FreecadModel:
             fea object: a FreeCAD object containing the FEA results
         """
         solver_object = self.model.getObject(solver_name)
+        self.solver_name = solver_name
+        self.fea_results_name = fea_results_name
 
         fea = femtools.ccxtools.FemToolsCcx(solver=solver_object)
         fea.purge_results()
@@ -112,54 +114,13 @@ class FreecadModel:
         else:
             raise RuntimeError("FEA results are not present")
 
-    def make_snapshot(self):
-        # inspired from
-        # https://github.com/FreeCAD/FreeCAD/blob/master/src/Mod/TemplatePyMod/Automation.py
+    def export_fea_results(self, filename: str, export_format: str = "vtk"):
+        import feminout.importVTKResults as vtkResults
 
-        # create a test geometry and create an IV representation as string
-        box = Part.makeCone(10, 8, 10)
-        iv = box.writeInventor()
-
-        # load it into a buffer
-        inp = coin.SoInput()
-        try:
-            inp.setBuffer(iv)
-        except Exception:
-            tempPath = tempfile.gettempdir()
-            fileName = tempPath + os.sep + "cone.iv"
-            file = open(fileName, "w")
-            file.write(iv)
-            file.close()
-            inp.openFile(fileName)
-
-        # and create a scenegraph
-        data = coin.SoDB.readAll(inp)
-        base = coin.SoBaseColor()
-        base.rgb.setValue(0.6, 0.7, 1.0)
-        data.insertChild(base, 0)
-
-        # add light and camera so that the rendered geometry is visible
-        root = coin.SoSeparator()
-        light = coin.SoDirectionalLight()
-        cam = coin.SoOrthographicCamera()
-        root.addChild(cam)
-        root.addChild(light)
-        root.addChild(data)
-
-        # do the rendering now
-        axo = coin.SbRotation(-0.353553, -0.146447, -0.353553, -0.853553)
-        viewport = coin.SbViewportRegion(400, 400)
-        cam.orientation.setValue(axo)
-        cam.viewAll(root, viewport)
-        off = coin.SoOffscreenRenderer(viewport)
-        root.ref()
-        off.render(root)
-        root.unref()
-
-        # export the image, PS is always available
-        off.writeToPostScript("crystal.ps")
-
-        # Other formats are only available if simage package is installed
-        if off.isWriteSupported("PNG"):
-            print("Save as PNG")
-            off.writeToFile("crystal.png", "PNG")
+        if export_format == "vtk":
+            objects = []
+            objects.append(self.model.getObject(self.fea_results_name))
+            vtkResults.export(objects, filename)
+            del objects
+        else:
+            raise NotImplementedError(f"Export method {export_format} not available")

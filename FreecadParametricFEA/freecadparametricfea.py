@@ -5,6 +5,7 @@ and displaying results.
 import time
 import warnings
 from typing import Union
+from os import path
 import pandas as pd
 import numpy as np
 
@@ -71,9 +72,7 @@ class FreecadParametricFEA:
                 "reduction_fun" (function handle): a handle to the data
                     reduction function (e.g. np.max)
         """
-        Warning(
-            "set_outputs() is not functioning yet - requested outputs ignored"
-        )
+        Warning("set_outputs() is not functioning yet - requested outputs ignored")
         self.outputs = outputs
 
     def setup_fea(self, fea_results_name: str, solver_name: str):
@@ -98,12 +97,17 @@ class FreecadParametricFEA:
             fea_results_name=self.fea_results_name,
         )
 
-    def run_parametric(self, dry_run: bool = False) -> pd.DataFrame:
+    def run_parametric(
+        self, dry_run: bool = False, export_results: bool = False
+    ) -> pd.DataFrame:
         """runs the parametric sweep and returns the results
 
         Args:
             ?dry_run (bool): Doesn't run the FEA, but checks for model issues.
                 Defaults to False
+            ?export_results (bool): export results in .vtk format for each analysis
+                Defaults to False
+
         Returns:
             pd.DataFrame: Pandas dataframe containing the results
         """
@@ -161,6 +165,19 @@ class FreecadParametricFEA:
                     self.results_dataframe.loc[
                         test_case_idx, "FEA_runtime"
                     ] = fea_runtime
+
+                    # export if requested
+                    # TODO: infer the number of digits from the size of the dataframe? somehow
+                    # TODO: try and join the VTK files together as frames
+                    if export_results:
+                        (folder, filename) = path.split(self.freecad_document.filename)
+                        (fn, _) = path.splitext(filename)
+                        self.freecad_document.export_fea_results(
+                            filename=path.join(
+                                folder, f"FEA_{fn}_{test_case_idx:03}.vtu"
+                            ),
+                            export_format="vtk",
+                        )
 
                 except RuntimeError as e:
                     self.results_dataframe.loc[test_case_idx, "Msg"] = str(e)
@@ -251,9 +268,7 @@ class FreecadParametricFEA:
 
             fig.show()
 
-    def save_fea_results(
-        self, results_filename: str, mode: str = "csv"
-    ) -> None:
+    def save_fea_results(self, results_filename: str, mode: str = "csv") -> None:
         """Saves the results of the analysis to a file.
 
         Args:
@@ -267,9 +282,7 @@ class FreecadParametricFEA:
         if mode == "csv":
             self.results_dataframe.to_csv(results_filename)
         else:
-            raise NotImplementedError(
-                f"Export mode {mode} not yet implemented"
-            )
+            raise NotImplementedError(f"Export mode {mode} not yet implemented")
 
     def param_to_df_heading(self, parameter) -> str:
         return parameter["object_name"] + "." + parameter["constraint_name"]
