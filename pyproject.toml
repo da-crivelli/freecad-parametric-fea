@@ -3,7 +3,7 @@ name = "freecadparametricfea"
 version = "0.1.0"
 description = "A flexible parametric FEA library based on FreeCAD"
 authors = ["Davide Crivelli <da.crivelli+github@gmail.com>"]
-license = "MIT"
+license = "LGPL-2.1-or-later"
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -17,6 +17,14 @@ pyside2 = "^5.15.2.1"
 black = "^22.12.0"
 flake8 = "^6.0.0"
 pylint = "^2.15.10"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2.1"
+
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^6.1.3"
 
 [build-system]
 requires = ["poetry-core"]

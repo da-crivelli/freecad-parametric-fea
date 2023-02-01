@@ -24,6 +24,7 @@ Simple n-parameter FEA with minimal output control
 A more professional feel; better support for output control
 
 - add logging
+- add documentation
 - add option to save the results in the active document
 - better define plot when >3 parameters
 - add screenshots / renderings for each datapoint
