@@ -6,9 +6,13 @@
 > this project is very early release, and should not be used for any serious structural analysis. It is aimed at hobbyists and hackers
 
 ## Quickest start
+Create a Python 3.8 virtual environment:
+
+`pipenv --python 3.8`
+
 Install the latest version from pypi:
 
-`pip install freecad-parametric-fea`
+`pipenv install freecad-parametric-fea`
 
 then run any of the examples inside [the examples folder](examples/)
 
