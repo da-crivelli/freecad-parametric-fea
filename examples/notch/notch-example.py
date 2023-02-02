@@ -1,6 +1,6 @@
 from os import path
 import numpy as np
-from FreecadParametricFEA import FreecadParametricFEA as pfea
+from FreecadParametricFEA import parametric as pfea
 
 
 """
@@ -9,7 +9,7 @@ Runs a static analysis and extracts the max. Von Mises stress
 and max deflection.
 """
 
-FREECAD_PATH = "C:\\Program Files\\FreeCAD 0.20\\bin"
+FREECAD_PATH = "C:/Program Files/FreeCAD 0.20/bin"
 
 # initialise the parametric FEA object
 fea = pfea(freecad_path=FREECAD_PATH)

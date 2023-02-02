@@ -1,5 +1,6 @@
 """FreecadModel object and helpers"""
 import sys
+import os
 
 
 def _register_freecad(freecad_path: str) -> None:
@@ -12,7 +13,7 @@ def _register_freecad(freecad_path: str) -> None:
         ImportError: if the specified folder does not contain the FreeCAD Python libraries
     """
     if freecad_path is not None and freecad_path not in sys.path:
-        sys.path.append(freecad_path)
+        sys.path.append(os.path.normpath(freecad_path))
     # TODO: should automagically try to find freecad in the usual suspect folders;
     # it should also automatically add /bin if the user didn't specify it
     try:
