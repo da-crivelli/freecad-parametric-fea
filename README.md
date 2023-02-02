@@ -3,7 +3,7 @@
  A flexible parametric FEA library based on [FreeCAD](https://www.freecadweb.org/), currently supporting FreeCAD 0.20. Some of this will be posted as a video tutorial on the [@engineeringmaths Youtube channel](https://www.youtube.com/@engineeringmaths)
 
 > **Warning**
-> this project is very early release, and should not be used for any serious structural analysis. It is aimed at hobbyists and hackers
+> this project is very early release, and should not be used for any serious structural analysis. It is aimed at hobbyists and makers
 
 ## Quickest start
 Create a Python 3.8 virtual environment:
