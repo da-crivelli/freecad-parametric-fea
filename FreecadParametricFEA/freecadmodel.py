@@ -115,6 +115,15 @@ class FreecadModel:
             raise RuntimeError("FEA results are not present")
 
     def export_fea_results(self, filename: str, export_format: str = "vtk"):
+        """exports the results of a analysis to various mesh formats
+
+        Args:
+            filename (str): path to the output file
+            export_format (str, optional): output format. Defaults to "vtk".
+
+        Raises:
+            NotImplementedError: if the output format specified is not available
+        """
         import feminout.importVTKResults as vtkResults
 
         if export_format == "vtk":

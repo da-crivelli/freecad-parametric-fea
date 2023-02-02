@@ -1,1 +1,1 @@
-from .freecadparametricfea import FreecadParametricFEA, FreecadModel
+from .parametric import parametric, FreecadModel

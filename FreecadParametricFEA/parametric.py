@@ -1,6 +1,5 @@
-"""Provides a FreecadParametricFEA class to handle higher
-level parametric FEA functions, such as handling parameters 
-and displaying results.
+"""Provides a FreecadParametricFEA class to handle higher level parametric FEA functions, 
+    such as handling parameters and displaying results.   
 """
 import time
 import warnings
@@ -15,7 +14,7 @@ import plotly.express as px
 from .freecadmodel import FreecadModel
 
 
-class FreecadParametricFEA:
+class parametric:
     """FreeCAD Parametric FEA object"""
 
     def __init__(self, freecad_path: str) -> None:
@@ -23,6 +22,7 @@ class FreecadParametricFEA:
 
         Args:
             freecad_path (str): path to the local FreeCAD installation.
+
         """
         self.freecad_document = None
         self.variables = []
@@ -39,7 +39,7 @@ class FreecadParametricFEA:
 
         Args:
             freecad_document (str or FreecadModel): path to the
-            FreeCAD document, or a FreecadModel object
+                FreeCAD document, or a FreecadModel object
         """
         if isinstance(freecad_document, str):
             self.freecad_document = FreecadModel(
@@ -53,11 +53,10 @@ class FreecadParametricFEA:
 
         Args:
             variables (list of dict): a list of dictionaries. The dictionaries
-              must contain:
+                must contain:
                 "object_name" (str): the object where the constraint is in,
                 "constraint_name" (str): the name of the constraint to modify
-                "constraint_values" (list of values): the values that the
-                    variable can assume
+                "constraint_values" (list of values): the values that the variable can assume
         """
         self.variables = variables
 
