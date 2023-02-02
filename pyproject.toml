@@ -1,10 +1,26 @@
-[tool.poetry]
+[project]
+authors = [{ name = "Davide Crivelli", email = "da.crivelli@gmail.com" }]
 name = "freecadparametricfea"
 version = "0.1.0"
 description = "A flexible parametric FEA library based on FreeCAD"
-authors = ["Davide Crivelli <da.crivelli+github@gmail.com>"]
 license = "LGPL-2.1-or-later"
 readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)",
+    "Operating System :: OS Independent",
+    "Development Status :: 2 - Pre-Alpha",
+]
+[project.urls]
+"Homepage" = "https://github.com/da-crivelli/freecad-parametric-fea"
+"Bug Tracker" = "https://github.com/da-crivelli/freecad-parametric-fea/issues"
+
+[tool.poetry]
+authors = ["Davide Crivelli, <da.crivelli@gmail.com>"]
+name = "freecadparametricfea"
+version = "0.1.0"
+description = "A flexible parametric FEA library based on FreeCAD"
+
 
 [tool.poetry.dependencies]
 python = "~3.8.10"
