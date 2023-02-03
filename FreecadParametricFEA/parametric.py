@@ -72,7 +72,7 @@ class parametric:
                     reduction function (e.g. np.max)
         """
         Warning("set_outputs() is not functioning yet - requested outputs ignored")
-        self.outputs = [
+        default_outputs = [
             {
                 "output_var": "vonMises",
                 "reduction_fun": np.max,
@@ -82,6 +82,7 @@ class parametric:
                 "reduction_fun": np.max,
             },
         ]
+        self.outputs = default_outputs
 
     def setup_fea(self, fea_results_name: str, solver_name: str):
         """sets up the FEA analysis object
@@ -158,6 +159,8 @@ class parametric:
 
                     fea_runtime = time.process_time() - start_time
 
+                    if self.outputs == []:
+                        self.set_outputs(outputs=[])
                     for output in self.outputs:
                         pass
 
