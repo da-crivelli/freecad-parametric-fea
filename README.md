@@ -1,4 +1,4 @@
-# freecad-parametric-fea
+# freecadparametricfea
 
  A flexible parametric FEA library based on [FreeCAD](https://www.freecadweb.org/), currently supporting FreeCAD 0.20. Some of this will be posted as a video tutorial on the [@engineeringmaths Youtube channel](https://www.youtube.com/@engineeringmaths)
 
@@ -12,7 +12,7 @@ Create a Python 3.8 virtual environment:
 
 Install the latest version from pypi:
 
-`pipenv install freecad-parametric-fea`
+`pipenv install freecadparametricfea`
 
 then run any of the examples inside [the examples folder](examples/)
 
@@ -69,6 +69,12 @@ Or just save the results dataframe in a .csv:
 
 ```python
 fea.save_fea_results("results.csv")
+```
+
+... or even take a look at the parameters matrix before running any analysis:
+
+```python
+results = fea.run_parametric(dry_run=True)
 ```
 
 # Contributing
