@@ -55,6 +55,9 @@ fea.setup_fea(fea_results_name="CCX_Results", solver_name="SolverCcxTools")
 
 # run and save the results (will return a Pandas DataFrame)
 results = fea.run_parametric()
+
+# plot the results
+fea.plot_fea_results()
 ```
 
 ## Feeling fancy
