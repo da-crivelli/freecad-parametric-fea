@@ -1,7 +1,7 @@
 [tool.poetry]
 authors = ["Davide Crivelli, <da.crivelli@gmail.com>"]
 name = "freecadparametricfea"
-version = "0.1.0"
+version = "0.1.1"
 description = "A flexible parametric FEA library based on FreeCAD"
 license = "LGPL-2.1-or-later"
 readme = "README.md"

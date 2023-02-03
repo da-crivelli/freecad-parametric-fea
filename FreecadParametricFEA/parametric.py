@@ -72,7 +72,16 @@ class parametric:
                     reduction function (e.g. np.max)
         """
         Warning("set_outputs() is not functioning yet - requested outputs ignored")
-        self.outputs = outputs
+        self.outputs = [
+            {
+                "output_var": "vonMises",
+                "reduction_fun": np.max,
+            },
+            {
+                "output_var": "DisplacementLengths",
+                "reduction_fun": np.max,
+            },
+        ]
 
     def setup_fea(self, fea_results_name: str, solver_name: str):
         """sets up the FEA analysis object
