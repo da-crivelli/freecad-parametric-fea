@@ -80,6 +80,12 @@ fea.save_fea_results("results.csv")
 results = fea.run_parametric(dry_run=True)
 ```
 
+# Limitations and caveats
+
+As of 0.1.1:
+ * only netgen meshes are supported
+ * you can only have the max. Von Mises stress and displacement as an output (although you can have full Paraview compatible output)
+
 # Contributing
 I have created this for hobby and personal use, as I was interested in learning more about FreeCAD and writing Python modules. There are a lot of things that I would like to fix, if you want to get involved have a look at the [open issues](https://github.com/da-crivelli/freecad-parametric-fea/issues/) and send me a message if you have any questions.
 
