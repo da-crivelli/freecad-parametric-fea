@@ -1,6 +1,8 @@
 # freecadparametricfea
 
- A flexible parametric FEA library based on [FreeCAD](https://www.freecadweb.org/), currently supporting FreeCAD 0.20. Some of this will be posted as a video tutorial on the [@engineeringmaths Youtube channel](https://www.youtube.com/@engineeringmaths)
+ A flexible parametric FEA library based on [FreeCAD](https://www.freecadweb.org/), currently supporting FreeCAD 0.20. 
+ 
+ If you have 20 minutes I recommend the video tutorial on the [@engineeringmaths Youtube channel](https://www.youtube.com/watch?v=cwtgB4KpdJo).
 
 > **Warning**
 > this project is very early release, and should not be used for any serious structural analysis. It is aimed at hobbyists and makers
