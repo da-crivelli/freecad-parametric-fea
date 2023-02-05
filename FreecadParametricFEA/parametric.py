@@ -8,6 +8,7 @@ from os import path
 import pandas as pd
 import numpy as np
 
+from tqdm import tqdm
 
 import plotly.express as px
 
@@ -107,7 +108,10 @@ class parametric:
         )
 
     def run_parametric(
-        self, dry_run: bool = False, export_results: bool = False
+        self,
+        dry_run: bool = False,
+        export_results: bool = False,
+        quiet_mode=False,
     ) -> pd.DataFrame:
         """runs the parametric sweep and returns the results
 
@@ -115,6 +119,8 @@ class parametric:
             ?dry_run (bool): Doesn't run the FEA, but checks for model issues.
                 Defaults to False
             ?export_results (bool): export results in .vtk format for each analysis
+                Defaults to False
+            ?quiet_mode (bool): suppresses all output.
                 Defaults to False
 
         Returns:
@@ -136,6 +142,12 @@ class parametric:
         )
 
         # iterate over all test cases
+        pbar = None
+        if not quiet_mode:
+            pbar = tqdm(
+                total=len(self.results_dataframe), desc="Running test cases"
+            )
+
         for test_case_idx, test_case_data in self.results_dataframe.iterrows():
             # change each parameter to the value specified in the pd column:
             for parameter in self.variables:
@@ -192,6 +204,12 @@ class parametric:
 
                 except RuntimeError as e:
                     self.results_dataframe.loc[test_case_idx, "Msg"] = str(e)
+
+            if not quiet_mode:
+                pbar.update(1)
+
+        if not quiet_mode:
+            pbar.close()
 
         return self.results_dataframe
 
