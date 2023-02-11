@@ -25,7 +25,6 @@ class parametric:
             freecad_path (str): path to the local FreeCAD installation.
 
         """
-        self.freecad_document = None
         self.variables = []
         self.outputs = []
         self.fea_results_name = ""
@@ -61,7 +60,7 @@ class parametric:
         """
         self.variables = variables
 
-    def set_outputs(self, outputs: list):
+    def set_outputs(self, outputs: list = []):
         """Sets the variables to return as an output.
 
         Args:
@@ -71,19 +70,22 @@ class parametric:
                     the freecad fea results object),
                 "reduction_fun" (function handle): a handle to the data
                     reduction function (e.g. np.max)
+                ?"column_label" (str): (optional) label for the column. Defaults to the function's __qualname__
         """
-        Warning("set_outputs() is not functioning yet - requested outputs ignored")
-        default_outputs = [
-            {
-                "output_var": "vonMises",
-                "reduction_fun": np.max,
-            },
-            {
-                "output_var": "DisplacementLengths",
-                "reduction_fun": np.max,
-            },
-        ]
-        self.outputs = default_outputs
+        if outputs == []:
+            default_outputs = [
+                {
+                    "output_var": "vonMises",
+                    "reduction_fun": np.max,
+                },
+                {
+                    "output_var": "DisplacementLengths",
+                    "reduction_fun": np.max,
+                },
+            ]
+            self.outputs = default_outputs
+        else:
+            self.outputs = outputs
 
     def setup_fea(self, fea_results_name: str, solver_name: str):
         """sets up the FEA analysis object
@@ -142,16 +144,16 @@ class parametric:
         )
 
         # iterate over all test cases
-        pbar = None
+        
         if not quiet_mode:
             pbar = tqdm(
                 total=len(self.results_dataframe), desc="Running test cases"
             )
 
-        for test_case_idx, test_case_data in self.results_dataframe.iterrows():
+        for (test_case_idx, test_case_data) in self.results_dataframe.iterrows():
             # change each parameter to the value specified in the pd column:
             for parameter in self.variables:
-                df_heading = self.param_to_df_heading(parameter)
+                df_heading = self._param_to_df_heading(parameter)
 
                 self.freecad_document.change_parameter(
                     object_name=parameter["object_name"],
@@ -172,18 +174,14 @@ class parametric:
                     fea_runtime = time.process_time() - start_time
 
                     if self.outputs == []:
-                        self.set_outputs(outputs=[])
+                        self.set_outputs()
                     for output in self.outputs:
-                        pass
-
-                    # adding results to a Pandas dataframe
-                    self.results_dataframe.loc[test_case_idx, "vonMises"] = max(
-                        fea_results_obj.vonMises
-                    )
-
-                    self.results_dataframe.loc[
-                        test_case_idx, "DisplacementLengths"
-                    ] = max(fea_results_obj.DisplacementLengths)
+                        self.results_dataframe.loc[
+                            test_case_idx,
+                            self._output_to_df_heading(output)
+                        ] = output["reduction_fun"](
+                            fea_results_obj.getPropertyByName(output["output_var"])
+                            )
 
                     self.results_dataframe.loc[
                         test_case_idx, "FEA_runtime"
@@ -233,20 +231,17 @@ class parametric:
 
         for parameter in variables:
             param_vals.append(parameter["constraint_values"])
-            param_headings.append(self.param_to_df_heading(parameter))
+            param_headings.append(self._param_to_df_heading(parameter))
 
-        # TODO: use real outputs later
-        output_headings = ["vonMises", "DisplacementLengths"]
-        warnings.warn(
-            "set_outputs() is not functioning yet - requested outputs ignored"
-        )
-
+        for output in outputs:
+            output_headings.append(self._output_to_df_heading(output))
+        
         # Build list of n-param values
         grid = np.meshgrid(*param_vals)
         grid_list = list(x.ravel() for x in grid)
         param_values_ndim = np.column_stack(grid_list)
 
-        empty_results = np.empty((len(grid_list[0]), len(output_headings) + 1))
+        empty_results = np.zeros((len(grid_list[0]), len(output_headings) + 1))
         param_values_all = np.column_stack((param_values_ndim, empty_results))
 
         df = pd.DataFrame(
@@ -313,5 +308,13 @@ class parametric:
         else:
             raise NotImplementedError(f"Export mode {mode} not yet implemented")
 
-    def param_to_df_heading(self, parameter) -> str:
-        return parameter["object_name"] + "." + parameter["constraint_name"]
+    def _param_to_df_heading(self, parameter) -> str:
+        return f"{parameter['object_name']}.{parameter['constraint_name']}"
+
+    def _output_to_df_heading(self, output) -> str:
+        if 'column_label' in output.keys():
+            col_name = output['column_label']
+        else:
+            col_name = output['reduction_fun'].__qualname__
+
+        return f"{col_name}({output['output_var']})"
