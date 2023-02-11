@@ -17,9 +17,10 @@ def _register_freecad(freecad_path: str) -> None:
     # TODO: should automagically try to find freecad in the usual suspect folders;
     # it should also automatically add /bin if the user didn't specify it
     try:
-        global FreeCAD, femtools
+        global FreeCAD, femtools, vtkResults
         FreeCAD = __import__("FreeCAD", globals(), locals())
         femtools = __import__("femtools.ccxtools", globals(), locals())
+        vtkResults = __import__("feminout.importVTKResults", globals(), locals())
 
     except ImportError as err:
         raise ImportError(
@@ -125,7 +126,7 @@ class FreecadModel:
         Raises:
             NotImplementedError: if the output format specified is not available
         """
-        import feminout.importVTKResults as vtkResults
+        
 
         if export_format == "vtk":
             objects = []

@@ -179,13 +179,13 @@ class parametric:
                         self.results_dataframe.loc[
                             test_case_idx,
                             self._output_to_df_heading(output)
-                        ] = output["reduction_fun"](
+                        ] = output["reduction_fun"]( # type: ignore (looks like Pylance's fault)
                             fea_results_obj.getPropertyByName(output["output_var"])
-                            )
+                            )    
 
                     self.results_dataframe.loc[
                         test_case_idx, "FEA_runtime"
-                    ] = fea_runtime
+                    ] = fea_runtime # type: ignore (looks like Pylance's fault)
 
                     # export if requested
                     # TODO: infer the number of digits from the size of the dataframe? somehow
@@ -201,13 +201,13 @@ class parametric:
                         )
 
                 except RuntimeError as e:
-                    self.results_dataframe.loc[test_case_idx, "Msg"] = str(e)
+                    self.results_dataframe.loc[test_case_idx, "Msg"] = str(e) # type:ignore (looks like Pylance's fault)
 
             if not quiet_mode:
-                pbar.update(1)
+                pbar.update(1)  # type: ignore (only exists if quiet_mode is false)
 
         if not quiet_mode:
-            pbar.close()
+            pbar.close()    # type: ignore (only exists if quiet_mode is false)
 
         return self.results_dataframe
 
@@ -258,15 +258,15 @@ class parametric:
             if (len(self.variables)) == 1:
                 fig = px.line(
                     self.results_dataframe,
-                    x=self.param_to_df_heading(self.variables[0]),
-                    y=output["output_var"],
+                    x=self._param_to_df_heading(self.variables[0]),
+                    y=self._output_to_df_heading(output),
                 )
             elif (len(self.variables)) == 2:
                 fig = px.line(
                     self.results_dataframe,
-                    x=self.param_to_df_heading(self.variables[0]),
-                    y=output["output_var"],
-                    color=self.param_to_df_heading(self.variables[1]),
+                    x=self._param_to_df_heading(self.variables[0]),
+                    y=self._output_to_df_heading(output),
+                    color=self._param_to_df_heading(self.variables[1]),
                 )
             else:
                 raise NotImplementedError(
