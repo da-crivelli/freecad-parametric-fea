@@ -41,6 +41,9 @@ class FreecadModel:
         self.filename = document_path
         _register_freecad(freecad_path=freecad_path)
         self.model = FreeCAD.open(document_path)
+
+        self.solver_name = ""
+        self.fea_results_name = ""
         # TODO: error handling
 
     def change_parameter(
@@ -63,22 +66,22 @@ class FreecadModel:
 
         # FIXME: this should really be done via type checking
         try:
-            isSketch = str(target_object[0]) == "<Sketcher::SketchObject>"
-            if isSketch:
+            is_sketch = str(target_object[0]) == "<Sketcher::SketchObject>"
+            if is_sketch:
                 target_object[0].getDatum(constraint_name)
             else:
                 getattr(target_object[0], constraint_name)
             # TODO: if setting a Feature.param, needs to be addressed directly
             # as getattr(target_object[0], constraint_name).
 
-        except NameError:
+        except NameError as exc:
             raise NameError(
                 f"Invalid constraint name {constraint_name} in object {object_name}"
-            )
+            ) from exc
 
         # set the datum to the desired value.
         # TODO: needs to be done via setattr() if setting a feature.param
-        if isSketch:
+        if is_sketch:
             target_object[0].setDatum(constraint_name, target_value)
         else:
             setattr(target_object[0], constraint_name, target_value)
@@ -126,7 +129,6 @@ class FreecadModel:
         Raises:
             NotImplementedError: if the output format specified is not available
         """
-        
 
         if export_format == "vtk":
             objects = []

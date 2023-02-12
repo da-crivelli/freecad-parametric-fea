@@ -2,7 +2,6 @@
     such as handling parameters and displaying results.   
 """
 import time
-import warnings
 from typing import Union
 from os import path
 import pandas as pd
@@ -144,11 +143,9 @@ class parametric:
         )
 
         # iterate over all test cases
-        
+
         if not quiet_mode:
-            pbar = tqdm(
-                total=len(self.results_dataframe), desc="Running test cases"
-            )
+            pbar = tqdm(total=len(self.results_dataframe), desc="Running test cases")
 
         for (test_case_idx, test_case_data) in self.results_dataframe.iterrows():
             # change each parameter to the value specified in the pd column:
@@ -177,20 +174,22 @@ class parametric:
                         self.set_outputs()
                     for output in self.outputs:
                         self.results_dataframe.loc[
-                            test_case_idx,
-                            self._output_to_df_heading(output)
-                        ] = output["reduction_fun"]( # type: ignore (looks like Pylance's fault)
+                            test_case_idx, self._output_to_df_heading(output)
+                        ] = output[  # type: ignore (looks like Pylance's fault)
+                            "reduction_fun"
+                        ](
                             fea_results_obj.getPropertyByName(output["output_var"])
-                            )    
+                        )
 
                     self.results_dataframe.loc[
                         test_case_idx, "FEA_runtime"
-                    ] = fea_runtime # type: ignore (looks like Pylance's fault)
+                    ] = fea_runtime  # type: ignore (looks like Pylance's fault)
 
                     # export if requested
                     # TODO: infer the number of digits from the size of the dataframe? somehow
                     # TODO: try and join the VTK files together as frames
                     if export_results:
+
                         (folder, filename) = path.split(self.freecad_document.filename)
                         (fn, _) = path.splitext(filename)
                         self.freecad_document.export_fea_results(
@@ -201,13 +200,17 @@ class parametric:
                         )
 
                 except RuntimeError as e:
-                    self.results_dataframe.loc[test_case_idx, "Msg"] = str(e) # type:ignore (looks like Pylance's fault)
+                    self.results_dataframe.loc[
+                        test_case_idx, "Msg"
+                    ] = str(  # type:ignore (looks like Pylance's fault)
+                        e
+                    )
 
             if not quiet_mode:
                 pbar.update(1)  # type: ignore (only exists if quiet_mode is false)
 
         if not quiet_mode:
-            pbar.close()    # type: ignore (only exists if quiet_mode is false)
+            pbar.close()  # type: ignore (only exists if quiet_mode is false)
 
         return self.results_dataframe
 
@@ -235,7 +238,7 @@ class parametric:
 
         for output in outputs:
             output_headings.append(self._output_to_df_heading(output))
-        
+
         # Build list of n-param values
         grid = np.meshgrid(*param_vals)
         grid_list = list(x.ravel() for x in grid)
@@ -277,18 +280,6 @@ class parametric:
             # TODO: find these from the objects or pass as parameters
             constraint_name = "CHANGE_ME"
             constraint_units = "CHANGE_ME"
-            # these will definitely need to change
-            # fig.update_xaxes(
-            #     title_text=f"{constraint_name} ({constraint_units})"
-            # )
-
-            # # Set y-axes titles
-            # fig.update_yaxes(
-            #     title_text="Max. Von Mises (MPa)", secondary_y=False
-            # )
-            # fig.update_yaxes(
-            #     title_text="Max. displacement (mm)", secondary_y=True
-            # )
 
             fig.show()
 
@@ -312,9 +303,9 @@ class parametric:
         return f"{parameter['object_name']}.{parameter['constraint_name']}"
 
     def _output_to_df_heading(self, output) -> str:
-        if 'column_label' in output.keys():
-            col_name = output['column_label']
+        if "column_label" in output.keys():
+            col_name = output["column_label"]
         else:
-            col_name = output['reduction_fun'].__qualname__
+            col_name = output["reduction_fun"].__qualname__
 
         return f"{col_name}({output['output_var']})"
