@@ -65,7 +65,7 @@ fea.plot_fea_results()
 ## Feeling fancy
 
 ### Custom outputs
-The default is to export the max Von Mises stress and max displacement values. You can specify however your own values and data reduction function like this:
+The default is to export the max Von Mises stress and max displacement values. You can also specify your own values and data reduction function like this:
 
 ```python
 fea.set_outputs([
@@ -86,8 +86,9 @@ fea.set_outputs([
 You can export individual ParaView files using:
 
 ```python
-results = fea.run_parametric(export_results=True)
+results = fea.run_parametric(export_results=True, output_folder="path/to/my/results")
 ```
+
 
 Or just save the results dataframe in a .csv:
 

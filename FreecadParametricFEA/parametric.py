@@ -112,7 +112,8 @@ class parametric:
         self,
         dry_run: bool = False,
         export_results: bool = False,
-        quiet_mode=False,
+        output_folder: str = "",
+        quiet_mode: bool = False,
     ) -> pd.DataFrame:
         """runs the parametric sweep and returns the results
 
@@ -121,6 +122,7 @@ class parametric:
                 Defaults to False
             ?export_results (bool): export results in .vtk format for each analysis
                 Defaults to False
+            ?output_folder (str): folder for results output
             ?quiet_mode (bool): suppresses all output.
                 Defaults to False
 
@@ -192,9 +194,17 @@ class parametric:
 
                         (folder, filename) = path.split(self.freecad_document.filename)
                         (fn, _) = path.splitext(filename)
+
+                        if output_folder != "":
+                            folder = output_folder
+
+                        n = int(
+                            np.ceil(np.log10(len(self.results_dataframe) + 1))
+                        )  # number of digits for vtk file
+
                         self.freecad_document.export_fea_results(
                             filename=path.join(
-                                folder, f"FEA_{fn}_{test_case_idx:03}.vtu"
+                                folder, f"FEA_{fn}_{test_case_idx:0{n}}.vtu"
                             ),
                             export_format="vtk",
                         )

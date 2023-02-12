@@ -133,7 +133,7 @@ class FreecadModel:
         if export_format == "vtk":
             objects = []
             objects.append(self.model.getObject(self.fea_results_name))
-            vtkResults.export(objects, filename)
+            vtkResults.importVTKResults.export(objects, filename)
             del objects
         else:
             raise NotImplementedError(f"Export method {export_format} not available")
