@@ -1,6 +1,7 @@
 """FreecadModel object and helpers"""
 import sys
 import os
+import contextlib
 
 
 def _register_freecad(freecad_path: str) -> None:
@@ -113,7 +114,12 @@ class FreecadModel:
 
         # there should be some error handling here
         fea.check_prerequisites()
-        fea.run()
+        # patching this because Calculix prints some useless info in
+        # Freecad 0.20 for solid models only... see bug #3
+        with open(os.devnull, "w", encoding="utf8") as devnull:
+            with contextlib.redirect_stdout(devnull):
+                fea.run()
+
         if fea.results_present:
             return self.model.getObject(fea_results_name)
         else:
