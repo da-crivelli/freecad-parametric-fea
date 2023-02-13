@@ -209,6 +209,7 @@ class parametric:
                             export_format="vtk",
                         )
 
+                # TODO: may want to add runtime errors to the dataframe also when in dry run
                 except RuntimeError as e:
                     self.results_dataframe.loc[
                         test_case_idx, "Msg"
