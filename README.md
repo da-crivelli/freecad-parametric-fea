@@ -64,11 +64,31 @@ fea.plot_fea_results()
 
 ## Feeling fancy
 
+### Custom outputs
+The default is to export the max Von Mises stress and max displacement values. You can also specify your own values and data reduction function like this:
+
+```python
+fea.set_outputs([
+        {
+            "output_var": "vonMises",
+            "reduction_fun": np.median,
+        },
+        {
+            "output_var": "vonMises",
+            "reduction_fun": lambda v: np.percentile(v, 95),
+            "column_label": "95th percentile"
+        }
+    ])
+```
+
+### Exporting data
+
 You can export individual ParaView files using:
 
 ```python
-results = fea.run_parametric(export_results=True)
+results = fea.run_parametric(export_results=True, output_folder="path/to/my/results")
 ```
+
 
 Or just save the results dataframe in a .csv:
 
@@ -84,9 +104,8 @@ results = fea.run_parametric(dry_run=True)
 
 # Limitations and caveats
 
-As of 0.1.1:
+As of 0.1.2:
  * only netgen meshes are supported
- * you can only have the max. Von Mises stress and displacement as an output (although you can have full Paraview compatible output)
 
 # Contributing
 I have created this for hobby and personal use, as I was interested in learning more about FreeCAD and writing Python modules. There are a lot of things that I would like to fix, if you want to get involved have a look at the [open issues](https://github.com/da-crivelli/freecad-parametric-fea/issues/) and send me a message if you have any questions.

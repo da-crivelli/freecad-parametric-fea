@@ -1,6 +1,7 @@
 """FreecadModel object and helpers"""
 import sys
 import os
+import contextlib
 
 
 def _register_freecad(freecad_path: str) -> None:
@@ -17,9 +18,10 @@ def _register_freecad(freecad_path: str) -> None:
     # TODO: should automagically try to find freecad in the usual suspect folders;
     # it should also automatically add /bin if the user didn't specify it
     try:
-        global FreeCAD, femtools
+        global FreeCAD, femtools, vtkResults
         FreeCAD = __import__("FreeCAD", globals(), locals())
         femtools = __import__("femtools.ccxtools", globals(), locals())
+        vtkResults = __import__("feminout.importVTKResults", globals(), locals())
 
     except ImportError as err:
         raise ImportError(
@@ -40,6 +42,9 @@ class FreecadModel:
         self.filename = document_path
         _register_freecad(freecad_path=freecad_path)
         self.model = FreeCAD.open(document_path)
+
+        self.solver_name = ""
+        self.fea_results_name = ""
         # TODO: error handling
 
     def change_parameter(
@@ -62,22 +67,22 @@ class FreecadModel:
 
         # FIXME: this should really be done via type checking
         try:
-            isSketch = str(target_object[0]) == "<Sketcher::SketchObject>"
-            if isSketch:
+            is_sketch = str(target_object[0]) == "<Sketcher::SketchObject>"
+            if is_sketch:
                 target_object[0].getDatum(constraint_name)
             else:
                 getattr(target_object[0], constraint_name)
             # TODO: if setting a Feature.param, needs to be addressed directly
             # as getattr(target_object[0], constraint_name).
 
-        except NameError:
+        except NameError as exc:
             raise NameError(
                 f"Invalid constraint name {constraint_name} in object {object_name}"
-            )
+            ) from exc
 
         # set the datum to the desired value.
         # TODO: needs to be done via setattr() if setting a feature.param
-        if isSketch:
+        if is_sketch:
             target_object[0].setDatum(constraint_name, target_value)
         else:
             setattr(target_object[0], constraint_name, target_value)
@@ -109,7 +114,12 @@ class FreecadModel:
 
         # there should be some error handling here
         fea.check_prerequisites()
-        fea.run()
+        # patching this because Calculix prints some useless info in
+        # Freecad 0.20 for solid models only... see bug #3
+        with open(os.devnull, "w", encoding="utf8") as devnull:
+            with contextlib.redirect_stdout(devnull):
+                fea.run()
+
         if fea.results_present:
             return self.model.getObject(fea_results_name)
         else:
@@ -125,12 +135,11 @@ class FreecadModel:
         Raises:
             NotImplementedError: if the output format specified is not available
         """
-        import feminout.importVTKResults as vtkResults
 
         if export_format == "vtk":
             objects = []
             objects.append(self.model.getObject(self.fea_results_name))
-            vtkResults.export(objects, filename)
+            vtkResults.importVTKResults.export(objects, filename)
             del objects
         else:
             raise NotImplementedError(f"Export method {export_format} not available")

@@ -36,15 +36,21 @@ fea.set_outputs(
     [
         {
             "output_var": "vonMises",
-            "reduction_fun": np.max,
+            "reduction_fun": np.median,
         },
+        {
+            "output_var": "vonMises",
+            "reduction_fun": lambda v: np.percentile(v, 95),
+            "column_label": "95th percentile"
+        },        
     ]
 )
 
 # setup the FEA
 fea.setup_fea(fea_results_name="CCX_Results", solver_name="SolverCcxTools")
-results = fea.run_parametric(export_results=True)
-# results = fea.run_parametric()
+
+#results = fea.run_parametric(export_results=True)
+results = fea.run_parametric()
 
 fea.plot_fea_results()
 
