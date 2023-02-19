@@ -1,6 +1,8 @@
 """FreecadModel object and helpers"""
 import sys
 import os
+import contextlib
+from .loghandler import logger
 
 
 def _register_freecad(freecad_path: str) -> None:
@@ -17,14 +19,14 @@ def _register_freecad(freecad_path: str) -> None:
     # TODO: should automagically try to find freecad in the usual suspect folders;
     # it should also automatically add /bin if the user didn't specify it
     try:
-        global FreeCAD, femtools
+        global FreeCAD, femtools, vtkResults
         FreeCAD = __import__("FreeCAD", globals(), locals())
         femtools = __import__("femtools.ccxtools", globals(), locals())
-
-    except ImportError as err:
-        raise ImportError(
-            f"{freecad_path} does not contain the FreeCAD Python libraries"
-        ) from err
+        vtkResults = __import__("feminout.importVTKResults", globals(), locals())
+    except (ImportError, ModuleNotFoundError):
+        logger.exception(f"\"{freecad_path}\" does not contain FreeCAD Python libraries")
+        raise
+    logger.debug(f"FreeCAD path added to sys.path: {freecad_path}")
 
 
 class FreecadModel:
@@ -40,6 +42,10 @@ class FreecadModel:
         self.filename = document_path
         _register_freecad(freecad_path=freecad_path)
         self.model = FreeCAD.open(document_path)
+        logger.debug(f"Opened FreeCAD model {document_path}")
+
+        self.solver_name = ""
+        self.fea_results_name = ""
         # TODO: error handling
 
     def change_parameter(
@@ -58,33 +64,40 @@ class FreecadModel:
 
         target_object = self.model.getObjectsByLabel(object_name)
         if not target_object:
-            raise KeyError(f"Unable to find object {object_name} in the model")
+            try:
+                raise KeyError(f"Unable to find object {object_name} in the model")
+            except KeyError as e:
+                logger.exception(str(e))
+                raise
 
         # FIXME: this should really be done via type checking
         try:
-            isSketch = str(target_object[0]) == "<Sketcher::SketchObject>"
-            if isSketch:
+            is_sketch = str(target_object[0]) == "<Sketcher::SketchObject>"
+            if is_sketch:
                 target_object[0].getDatum(constraint_name)
+                logger.debug(f"Object {object_name} is a sketch, found {constraint_name}")
             else:
                 getattr(target_object[0], constraint_name)
-            # TODO: if setting a Feature.param, needs to be addressed directly
-            # as getattr(target_object[0], constraint_name).
+                logger.debug(
+                    f"Object {object_name} is an object, found {constraint_name}"
+                    )
 
-        except NameError:
-            raise NameError(
+        except (NameError, IndexError):
+            logger.exception(
                 f"Invalid constraint name {constraint_name} in object {object_name}"
             )
+            raise
 
         # set the datum to the desired value.
-        # TODO: needs to be done via setattr() if setting a feature.param
-        if isSketch:
+        if is_sketch:
             target_object[0].setDatum(constraint_name, target_value)
         else:
             setattr(target_object[0], constraint_name, target_value)
 
+        logger.debug(f"Set {object_name}.{constraint_name} to {target_value}")
         # apply changes and recompute
         self.model.recompute()
-
+        logger.debug("Model recomputed")
         # TODO: check for model errors here
 
     def run_fea(self, solver_name: str, fea_results_name: str):
@@ -106,14 +119,26 @@ class FreecadModel:
         fea.purge_results()
         fea.reset_all()
         fea.update_objects()
+        logger.debug(f"Prepared solver {solver_object}")
 
         # there should be some error handling here
         fea.check_prerequisites()
-        fea.run()
+        logger.debug("Checked FEA prerequisites")
+        # patching this because Calculix prints some useless info in
+        # Freecad 0.20 for solid models only... see bug #3
+        with open(os.devnull, "w", encoding="utf8") as devnull:
+            with contextlib.redirect_stdout(devnull):
+                fea.run()
+
         if fea.results_present:
+            logger.debug("FEA results generated")
             return self.model.getObject(fea_results_name)
         else:
-            raise RuntimeError("FEA results are not present")
+            try:
+                raise RuntimeError("FEA results are not present")
+            except RuntimeError as e:
+                logger.exception(str(e))
+                raise
 
     def export_fea_results(self, filename: str, export_format: str = "vtk"):
         """exports the results of a analysis to various mesh formats
@@ -125,12 +150,16 @@ class FreecadModel:
         Raises:
             NotImplementedError: if the output format specified is not available
         """
-        import feminout.importVTKResults as vtkResults
 
         if export_format == "vtk":
             objects = []
             objects.append(self.model.getObject(self.fea_results_name))
-            vtkResults.export(objects, filename)
+            vtkResults.importVTKResults.export(objects, filename)
+            logger.info("Exporting VTK file {filename}")
             del objects
         else:
-            raise NotImplementedError(f"Export method {export_format} not available")
+            try:
+                raise NotImplementedError(f"Export method {export_format} not available")
+            except NotImplementedError as e:
+                logger.exception(str(e))
+                raise

@@ -1,8 +1,7 @@
-"""Provides a FreecadParametricFEA class to handle higher level parametric FEA functions, 
-    such as handling parameters and displaying results.   
+"""Provides a FreecadParametricFEA class to handle higher level parametric FEA functions,
+    such as handling parameters and displaying results.
 """
 import time
-import warnings
 from typing import Union
 from os import path
 import pandas as pd
@@ -13,6 +12,7 @@ from tqdm import tqdm
 import plotly.express as px
 
 from .freecadmodel import FreecadModel
+from .loghandler import logger
 
 
 class parametric:
@@ -25,7 +25,6 @@ class parametric:
             freecad_path (str): path to the local FreeCAD installation.
 
         """
-        self.freecad_document = None
         self.variables = []
         self.outputs = []
         self.fea_results_name = ""
@@ -49,6 +48,8 @@ class parametric:
         elif isinstance(freecad_document, FreecadModel):
             self.freecad_document = freecad_document
 
+        logger.info(f"FreeCAD document {freecad_document} loaded successfully")
+
     def set_variables(self, variables: list):
         """Sets the variables to run the batch analysis over.
 
@@ -57,11 +58,11 @@ class parametric:
                 must contain:
                 "object_name" (str): the object where the constraint is in,
                 "constraint_name" (str): the name of the constraint to modify
-                "constraint_values" (list of values): the values that the variable can assume
+                "constraint_values" (list of values):  values that the variable can assume
         """
         self.variables = variables
 
-    def set_outputs(self, outputs: list):
+    def set_outputs(self, outputs: list = []):
         """Sets the variables to return as an output.
 
         Args:
@@ -71,19 +72,25 @@ class parametric:
                     the freecad fea results object),
                 "reduction_fun" (function handle): a handle to the data
                     reduction function (e.g. np.max)
+                ?"column_label" (str): (optional) label for the column.
+                    Defaults to the function's __qualname__
         """
-        Warning("set_outputs() is not functioning yet - requested outputs ignored")
-        default_outputs = [
-            {
-                "output_var": "vonMises",
-                "reduction_fun": np.max,
-            },
-            {
-                "output_var": "DisplacementLengths",
-                "reduction_fun": np.max,
-            },
-        ]
-        self.outputs = default_outputs
+        if outputs == []:
+            default_outputs = [
+                {
+                    "output_var": "vonMises",
+                    "reduction_fun": np.max,
+                },
+                {
+                    "output_var": "DisplacementLengths",
+                    "reduction_fun": np.max,
+                },
+            ]
+            self.outputs = default_outputs
+        else:
+            self.outputs = outputs
+
+        logger.debug(f"Analysis outputs set to {outputs}")
 
     def setup_fea(self, fea_results_name: str, solver_name: str):
         """sets up the FEA analysis object
@@ -111,7 +118,8 @@ class parametric:
         self,
         dry_run: bool = False,
         export_results: bool = False,
-        quiet_mode=False,
+        output_folder: str = "",
+        quiet_mode: bool = False,
     ) -> pd.DataFrame:
         """runs the parametric sweep and returns the results
 
@@ -120,6 +128,7 @@ class parametric:
                 Defaults to False
             ?export_results (bool): export results in .vtk format for each analysis
                 Defaults to False
+            ?output_folder (str): folder for results output
             ?quiet_mode (bool): suppresses all output.
                 Defaults to False
 
@@ -140,18 +149,17 @@ class parametric:
         self.results_dataframe = self.populate_test_dataframe(
             self.variables, self.outputs
         )
+        logger.debug("Results dataframe initialised")
 
         # iterate over all test cases
-        pbar = None
-        if not quiet_mode:
-            pbar = tqdm(
-                total=len(self.results_dataframe), desc="Running test cases"
-            )
 
-        for test_case_idx, test_case_data in self.results_dataframe.iterrows():
+        if not quiet_mode:
+            pbar = tqdm(total=len(self.results_dataframe), desc="Running test cases")
+
+        for (test_case_idx, test_case_data) in self.results_dataframe.iterrows():
             # change each parameter to the value specified in the pd column:
             for parameter in self.variables:
-                df_heading = self.param_to_df_heading(parameter)
+                df_heading = self._param_to_df_heading(parameter)
 
                 self.freecad_document.change_parameter(
                     object_name=parameter["object_name"],
@@ -168,48 +176,60 @@ class parametric:
                         solver_name=self.solver_name,
                         fea_results_name=self.fea_results_name,
                     )
-
                     fea_runtime = time.process_time() - start_time
+                    logger.info(f"FEA test case {test_case_idx} ran in {fea_runtime}s")
 
                     if self.outputs == []:
-                        self.set_outputs(outputs=[])
+                        self.set_outputs()
                     for output in self.outputs:
-                        pass
-
-                    # adding results to a Pandas dataframe
-                    self.results_dataframe.loc[test_case_idx, "vonMises"] = max(
-                        fea_results_obj.vonMises
-                    )
-
-                    self.results_dataframe.loc[
-                        test_case_idx, "DisplacementLengths"
-                    ] = max(fea_results_obj.DisplacementLengths)
+                        self.results_dataframe.loc[
+                            test_case_idx, self._output_to_df_heading(output)
+                        ] = output[  # type: ignore (looks like Pylance's fault)
+                            "reduction_fun"
+                        ](
+                            fea_results_obj.getPropertyByName(output["output_var"])
+                        )
 
                     self.results_dataframe.loc[
                         test_case_idx, "FEA_runtime"
-                    ] = fea_runtime
+                    ] = fea_runtime  # type: ignore (looks like Pylance's fault)
 
                     # export if requested
-                    # TODO: infer the number of digits from the size of the dataframe? somehow
                     # TODO: try and join the VTK files together as frames
                     if export_results:
+
                         (folder, filename) = path.split(self.freecad_document.filename)
                         (fn, _) = path.splitext(filename)
+
+                        if output_folder != "":
+                            folder = output_folder
+
+                        n = int(
+                            np.ceil(np.log10(len(self.results_dataframe) + 1))
+                        )  # number of digits for vtk file
+
                         self.freecad_document.export_fea_results(
                             filename=path.join(
-                                folder, f"FEA_{fn}_{test_case_idx:03}.vtu"
+                                folder, f"FEA_{fn}_{test_case_idx:0{n}}.vtu"
                             ),
                             export_format="vtk",
                         )
 
+                # TODO: may want to add runtime errors to the dataframe also
+                # when in dry run
                 except RuntimeError as e:
-                    self.results_dataframe.loc[test_case_idx, "Msg"] = str(e)
+                    self.results_dataframe.loc[
+                        test_case_idx, "Msg"
+                    ] = str(  # type:ignore (looks like Pylance's fault)
+                        e
+                    )
+                    logger.warning(f"Test case {test_case_idx} exited with error {e}")
 
             if not quiet_mode:
-                pbar.update(1)
+                pbar.update(1)  # type: ignore (only exists if quiet_mode is false)
 
         if not quiet_mode:
-            pbar.close()
+            pbar.close()  # type: ignore (only exists if quiet_mode is false)
 
         return self.results_dataframe
 
@@ -233,20 +253,17 @@ class parametric:
 
         for parameter in variables:
             param_vals.append(parameter["constraint_values"])
-            param_headings.append(self.param_to_df_heading(parameter))
+            param_headings.append(self._param_to_df_heading(parameter))
 
-        # TODO: use real outputs later
-        output_headings = ["vonMises", "DisplacementLengths"]
-        warnings.warn(
-            "set_outputs() is not functioning yet - requested outputs ignored"
-        )
+        for output in outputs:
+            output_headings.append(self._output_to_df_heading(output))
 
         # Build list of n-param values
         grid = np.meshgrid(*param_vals)
         grid_list = list(x.ravel() for x in grid)
         param_values_ndim = np.column_stack(grid_list)
 
-        empty_results = np.empty((len(grid_list[0]), len(output_headings) + 1))
+        empty_results = np.zeros((len(grid_list[0]), len(output_headings) + 1))
         param_values_all = np.column_stack((param_values_ndim, empty_results))
 
         df = pd.DataFrame(
@@ -254,46 +271,31 @@ class parametric:
             columns=[*param_headings, *output_headings, "FEA_runtime"],
         )
         df["Msg"] = ""
+        logger.debug("Empty dataframe created")
         return df
 
     def plot_fea_results(self):
         """Plots the FEM analysis results using Plotly"""
 
+        logger.debug("Preparing to plot FEA results")
         for output in self.outputs:
             if (len(self.variables)) == 1:
                 fig = px.line(
                     self.results_dataframe,
-                    x=self.param_to_df_heading(self.variables[0]),
-                    y=output["output_var"],
+                    x=self._param_to_df_heading(self.variables[0]),
+                    y=self._output_to_df_heading(output),
                 )
             elif (len(self.variables)) == 2:
                 fig = px.line(
                     self.results_dataframe,
-                    x=self.param_to_df_heading(self.variables[0]),
-                    y=output["output_var"],
-                    color=self.param_to_df_heading(self.variables[1]),
+                    x=self._param_to_df_heading(self.variables[0]),
+                    y=self._output_to_df_heading(output),
+                    color=self._param_to_df_heading(self.variables[1]),
                 )
             else:
                 raise NotImplementedError(
                     "Plotting more than 2 variables not supported yet"
                 )
-
-            # Set x-axis title
-            # TODO: find these from the objects or pass as parameters
-            constraint_name = "CHANGE_ME"
-            constraint_units = "CHANGE_ME"
-            # these will definitely need to change
-            # fig.update_xaxes(
-            #     title_text=f"{constraint_name} ({constraint_units})"
-            # )
-
-            # # Set y-axes titles
-            # fig.update_yaxes(
-            #     title_text="Max. Von Mises (MPa)", secondary_y=False
-            # )
-            # fig.update_yaxes(
-            #     title_text="Max. displacement (mm)", secondary_y=True
-            # )
 
             fig.show()
 
@@ -313,5 +315,13 @@ class parametric:
         else:
             raise NotImplementedError(f"Export mode {mode} not yet implemented")
 
-    def param_to_df_heading(self, parameter) -> str:
-        return parameter["object_name"] + "." + parameter["constraint_name"]
+    def _param_to_df_heading(self, parameter) -> str:
+        return f"{parameter['object_name']}.{parameter['constraint_name']}"
+
+    def _output_to_df_heading(self, output) -> str:
+        if "column_label" in output.keys():
+            col_name = output["column_label"]
+        else:
+            col_name = output["reduction_fun"].__qualname__
+
+        return f"{col_name}({output['output_var']})"
