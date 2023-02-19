@@ -1,5 +1,5 @@
-"""Provides a FreecadParametricFEA class to handle higher level parametric FEA functions, 
-    such as handling parameters and displaying results.   
+"""Provides a FreecadParametricFEA class to handle higher level parametric FEA functions,
+    such as handling parameters and displaying results.
 """
 import time
 from typing import Union
@@ -12,6 +12,7 @@ from tqdm import tqdm
 import plotly.express as px
 
 from .freecadmodel import FreecadModel
+from .loghandler import logger
 
 
 class parametric:
@@ -47,6 +48,8 @@ class parametric:
         elif isinstance(freecad_document, FreecadModel):
             self.freecad_document = freecad_document
 
+        logger.info(f"FreeCAD document {freecad_document} loaded successfully")
+
     def set_variables(self, variables: list):
         """Sets the variables to run the batch analysis over.
 
@@ -55,7 +58,7 @@ class parametric:
                 must contain:
                 "object_name" (str): the object where the constraint is in,
                 "constraint_name" (str): the name of the constraint to modify
-                "constraint_values" (list of values): the values that the variable can assume
+                "constraint_values" (list of values):  values that the variable can assume
         """
         self.variables = variables
 
@@ -69,7 +72,8 @@ class parametric:
                     the freecad fea results object),
                 "reduction_fun" (function handle): a handle to the data
                     reduction function (e.g. np.max)
-                ?"column_label" (str): (optional) label for the column. Defaults to the function's __qualname__
+                ?"column_label" (str): (optional) label for the column.
+                    Defaults to the function's __qualname__
         """
         if outputs == []:
             default_outputs = [
@@ -85,6 +89,8 @@ class parametric:
             self.outputs = default_outputs
         else:
             self.outputs = outputs
+
+        logger.debug(f"Analysis outputs set to {outputs}")
 
     def setup_fea(self, fea_results_name: str, solver_name: str):
         """sets up the FEA analysis object
@@ -143,6 +149,7 @@ class parametric:
         self.results_dataframe = self.populate_test_dataframe(
             self.variables, self.outputs
         )
+        logger.debug("Results dataframe initialised")
 
         # iterate over all test cases
 
@@ -169,8 +176,8 @@ class parametric:
                         solver_name=self.solver_name,
                         fea_results_name=self.fea_results_name,
                     )
-
                     fea_runtime = time.process_time() - start_time
+                    logger.info(f"FEA test case {test_case_idx} ran in {fea_runtime}s")
 
                     if self.outputs == []:
                         self.set_outputs()
@@ -188,7 +195,6 @@ class parametric:
                     ] = fea_runtime  # type: ignore (looks like Pylance's fault)
 
                     # export if requested
-                    # TODO: infer the number of digits from the size of the dataframe? somehow
                     # TODO: try and join the VTK files together as frames
                     if export_results:
 
@@ -209,13 +215,15 @@ class parametric:
                             export_format="vtk",
                         )
 
-                # TODO: may want to add runtime errors to the dataframe also when in dry run
+                # TODO: may want to add runtime errors to the dataframe also
+                # when in dry run
                 except RuntimeError as e:
                     self.results_dataframe.loc[
                         test_case_idx, "Msg"
                     ] = str(  # type:ignore (looks like Pylance's fault)
                         e
                     )
+                    logger.warning(f"Test case {test_case_idx} exited with error {e}")
 
             if not quiet_mode:
                 pbar.update(1)  # type: ignore (only exists if quiet_mode is false)
@@ -263,11 +271,13 @@ class parametric:
             columns=[*param_headings, *output_headings, "FEA_runtime"],
         )
         df["Msg"] = ""
+        logger.debug("Empty dataframe created")
         return df
 
     def plot_fea_results(self):
         """Plots the FEM analysis results using Plotly"""
 
+        logger.debug("Preparing to plot FEA results")
         for output in self.outputs:
             if (len(self.variables)) == 1:
                 fig = px.line(
@@ -286,11 +296,6 @@ class parametric:
                 raise NotImplementedError(
                     "Plotting more than 2 variables not supported yet"
                 )
-
-            # Set x-axis title
-            # TODO: find these from the objects or pass as parameters
-            constraint_name = "CHANGE_ME"
-            constraint_units = "CHANGE_ME"
 
             fig.show()
 
