@@ -1,10 +1,10 @@
 # freecadparametricfea
 
- A flexible parametric FEA library based on [FreeCAD](https://www.freecadweb.org/), currently supporting FreeCAD 0.20. 
+ A flexible parametric FEA library based on [FreeCAD](https://www.freecadweb.org/), currently supporting FreeCAD 0.20 on Windows.
  
  If you have 20 minutes I recommend the video tutorial on the [@engineeringmaths Youtube channel](https://www.youtube.com/watch?v=cwtgB4KpdJo).
 
-> **Warning**
+> **Warning:**
 > this project is very early release, and should not be used for any serious structural analysis. It is aimed at hobbyists and makers
 
 ## Quickest start
@@ -20,7 +20,7 @@ then run any of the examples inside [the examples folder](examples/)
 
 ## Quick start
 
-Create a FreeCAD part and assign names to the constraints that you want to change. You need to set up a FEA analysis as well, I have tested this using CalculiX and GMsh .
+Create a FreeCAD part and assign names to the constraints that you want to change. You need to set up a FEA analysis as well, I have tested this using CalculiX and Netgen.
 
 Then in a script, or on the command line, run:
 
