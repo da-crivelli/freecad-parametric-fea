@@ -251,6 +251,9 @@ class parametric:
         param_headings = []
         output_headings = []
 
+        # if parameter["constraint_values"] is a string, we need to map it 
+        # to a dict of integers so that meshgrid still works. After meshgrid
+        # we then need to replace. Maybe use pd.category??? could this work?
         for parameter in variables:
             param_vals.append(parameter["constraint_values"])
             param_headings.append(self._param_to_df_heading(parameter))

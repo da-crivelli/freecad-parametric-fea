@@ -71,11 +71,20 @@ class FreecadModel:
                 raise
 
         # FIXME: this should really be done via type checking
+
+
         try:
-            is_sketch = str(target_object[0]) == "<Sketcher::SketchObject>"
-            if is_sketch:
+            target_str = str(target_object[0])
+            is_sketch = False
+            if target_str == "<Sketcher::SketchObject>":
+                is_sketch = True
                 target_object[0].getDatum(constraint_name)
                 logger.debug(f"Object {object_name} is a sketch, found {constraint_name}")
+            elif target_str == "<App::MaterialObjectPython object>":
+                from materialtools.cardutils import import_materials as getmats
+                materials, _, _ = getmats(target_object[0].Category)
+
+                logger.debug(f"Object {object_name} is a material, setting material {constraint_name}")
             else:
                 getattr(target_object[0], constraint_name)
                 logger.debug(
