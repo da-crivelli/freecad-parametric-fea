@@ -70,26 +70,37 @@ class FreecadModel:
                 logger.exception(str(e))
                 raise
 
-        # FIXME: this should really be done via type checking
+        # supported specific object types:
+        # <Sketcher::SketchObject>
+        # <App::MaterialObjectPython object>
 
+        # FIXME: this should really be done via type checking
 
         try:
             target_str = str(target_object[0])
-            is_sketch = False
+            
+            # sketcher objects need obj.getDatum / obj.setDatum
             if target_str == "<Sketcher::SketchObject>":
-                is_sketch = True
                 target_object[0].getDatum(constraint_name)
                 logger.debug(f"Object {object_name} is a sketch, found {constraint_name}")
+
+                target_object[0].setDatum(constraint_name, target_value)
+
+            # materials need some special treatment via material cards
             elif target_str == "<App::MaterialObjectPython object>":
                 from materialtools.cardutils import import_materials as getmats
                 materials, _, _ = getmats(target_object[0].Category)
 
                 logger.debug(f"Object {object_name} is a material, setting material {constraint_name}")
+            
+            # generic objects need setattr(obj, attr, value)
             else:
                 getattr(target_object[0], constraint_name)
                 logger.debug(
                     f"Object {object_name} is an object, found {constraint_name}"
                     )
+                
+                setattr(target_object[0], constraint_name, target_value)
 
         except (NameError, IndexError):
             logger.exception(
@@ -98,10 +109,7 @@ class FreecadModel:
             raise
 
         # set the datum to the desired value.
-        if is_sketch:
-            target_object[0].setDatum(constraint_name, target_value)
-        else:
-            setattr(target_object[0], constraint_name, target_value)
+
 
         logger.debug(f"Set {object_name}.{constraint_name} to {target_value}")
         # apply changes and recompute
