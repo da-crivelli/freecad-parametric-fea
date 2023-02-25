@@ -52,9 +52,6 @@ fea.set_variables(
     ]
 )
 
-# setup the FEA analysis - we need to know the CalculiX results object and the solver name
-fea.setup_fea(fea_results_name="CCX_Results", solver_name="SolverCcxTools")
-
 # run and save the results (will return a Pandas DataFrame)
 results = fea.run_parametric()
 
@@ -93,7 +90,13 @@ fea.set_outputs([
     },
 ])
 ```
+### Different names for CCX solver and CCX results
+Renaming the CCX solver and results won't affect the solution, but if you're having trouble running the analysis you can set them yourself just before `run_parametric()`:
 
+```python
+# in case you need to explicitly set the CalculiX results object and the solver name
+fea.setup_fea(fea_results_name="CCX_Results", solver_name="SolverCcxTools")
+```
 
 ### Exporting data
 
