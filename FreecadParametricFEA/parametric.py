@@ -93,7 +93,7 @@ class parametric:
         else:
             self.outputs = outputs
 
-        logger.debug(f"Analysis outputs set to {outputs}")
+        logger.debug(f"Analysis outputs set to {self.outputs}")
 
     def setup_fea(self, fea_results_name: str, solver_name: str):
         """sets up the FEA analysis object
@@ -104,18 +104,8 @@ class parametric:
             solver_name (str): name of the solver object in the document
                 e.g. SolverCcxTools
         """
-        self.fea_results_name = fea_results_name
-        self.solver_name = solver_name
-
-    def run_fea(self):
-        """Runs the FEM analysis
-        Returns:
-           fea object: a FreeCAD object containing the FEA results
-        """
-        return self.freecad_document.run_fea(
-            solver_name=self.solver_name,
-            fea_results_name=self.fea_results_name,
-        )
+        self.freecad_document.fea_results_name = fea_results_name
+        self.freecad_document.solver_name = solver_name
 
     def run_parametric(
         self,
@@ -175,10 +165,7 @@ class parametric:
                 start_time = time.process_time()
 
                 try:
-                    fea_results_obj = self.freecad_document.run_fea(
-                        solver_name=self.solver_name,
-                        fea_results_name=self.fea_results_name,
-                    )
+                    fea_results_obj = self.freecad_document.run_fea()
                     fea_runtime = time.process_time() - start_time
                     logger.info(f"FEA test case {test_case_idx} ran in {fea_runtime}s")
 
