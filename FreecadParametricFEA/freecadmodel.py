@@ -4,6 +4,8 @@ import os
 import contextlib
 from .loghandler import logger
 
+from typing import Tuple
+
 
 def _register_freecad(freecad_path: str) -> None:
     """registers the freecad path and femtools in os.PATH
@@ -24,7 +26,7 @@ def _register_freecad(freecad_path: str) -> None:
         femtools = __import__("femtools.ccxtools", globals(), locals())
         vtkResults = __import__("feminout.importVTKResults", globals(), locals())
     except (ImportError, ModuleNotFoundError):
-        logger.exception(f"\"{freecad_path}\" does not contain FreeCAD Python libraries")
+        logger.exception(f'"{freecad_path}" does not contain FreeCAD Python libraries')
         raise
     logger.debug(f"FreeCAD path added to sys.path: {freecad_path}")
 
@@ -82,13 +84,16 @@ class FreecadModel:
             # sketcher objects need obj.getDatum / obj.setDatum
             if target_str == "<Sketcher::SketchObject>":
                 target_object[0].getDatum(constraint_name)
-                logger.debug(f"Object {object_name} is a sketch, found {constraint_name}")
+                logger.debug(
+                    f"Object {object_name} is a sketch, found {constraint_name}"
+                )
 
                 target_object[0].setDatum(constraint_name, target_value)
 
             # materials need some special treatment via material cards
             elif target_str == "<App::MaterialObjectPython object>":
-                from materialtools.cardutils import import_materials as getmats
+                from materialtools.cardutils import import_materials as getmats  # type: ignore
+
                 materials, _, _ = getmats(target_object[0].Category)
 
                 for (_, m) in materials.items():
@@ -96,15 +101,17 @@ class FreecadModel:
                         target_object[0].Material = m
                         return
 
-                logger.debug(f"Object {object_name} is a material, "
-                             "setting material {constraint_name}")
+                logger.debug(
+                    f"Object {object_name} is a material, "
+                    "setting material {constraint_name}"
+                )
 
             # generic objects need setattr(obj, attr, value)
             else:
                 getattr(target_object[0], constraint_name)
                 logger.debug(
                     f"Object {object_name} is an object, found {constraint_name}"
-                    )
+                )
 
                 setattr(target_object[0], constraint_name, target_value)
 
@@ -120,7 +127,7 @@ class FreecadModel:
         logger.debug("Model recomputed")
         # TODO: check for model errors here
 
-    def run_fea(self, solver_name: str, fea_results_name: str):
+    def run_fea(self):
         """runs a FEA analysis in the specified freecad document
 
         Args:
@@ -131,15 +138,17 @@ class FreecadModel:
         Returns:
             fea object: a FreeCAD object containing the FEA results
         """
-        solver_object = self.model.getObject(solver_name)
-        self.solver_name = solver_name
-        self.fea_results_name = fea_results_name
+
+        if self.solver_name == "":
+            self._find_solver_result_names()
+
+        solver_object = self.model.getObject(self.solver_name)
 
         fea = femtools.ccxtools.FemToolsCcx(solver=solver_object)
         fea.purge_results()
         fea.reset_all()
         fea.update_objects()
-        logger.debug(f"Prepared solver {solver_object}")
+        logger.debug(f"Prepared solver {solver_object.Name}")
 
         # there should be some error handling here
         fea.check_prerequisites()
@@ -152,7 +161,7 @@ class FreecadModel:
 
         if fea.results_present:
             logger.debug("FEA results generated")
-            return self.model.getObject(fea_results_name)
+            return self.model.getObject(self.fea_results_name)
         else:
             try:
                 raise RuntimeError("FEA results are not present")
@@ -179,7 +188,37 @@ class FreecadModel:
             del objects
         else:
             try:
-                raise NotImplementedError(f"Export method {export_format} not available")
+                raise NotImplementedError(
+                    f"Export method {export_format} not available"
+                )
             except NotImplementedError as e:
                 logger.exception(str(e))
                 raise
+
+    def _find_solver_result_names(self) -> Tuple[str, str]:
+        # do stuff...
+        solver_name = ""
+        fea_results_name = ""
+
+        for el in self.model.Objects:
+            if str(el) == "<Fem::FemSolverObjectPython object>":
+                solver_name = el.Name
+            if str(el) == "<Fem::FemResultObjectPython object>":
+                fea_results_name = el.Name
+
+        if "" in (solver_name, fea_results_name):
+            try:
+                raise NameError(
+                    "FEA solver or results not found, consider "
+                    "specifying manually using parametric.setup_fea()"
+                )
+            except NameError as e:
+                logger.exception(str(e))
+                raise
+
+        logger.debug(f"Found solver name: {solver_name}")
+        logger.debug(f"Found FEA results name: {fea_results_name}")
+
+        self.solver_name = solver_name
+        self.fea_results_name = fea_results_name
+        return (self.solver_name, self.fea_results_name)
