@@ -17,8 +17,13 @@ fea.set_variables(
             "object_name": "Sketch",  # the object where to find the constraint
             "constraint_name": "HoleDiam",  # the constraint name that you assigned
             "constraint_values": np.linspace(
-                10, 30, 5
+                10, 30, 2
             ),  # the values you want to check
+        },
+        {
+            "object_name": "MaterialSolid",  # the object where to find the constraint
+            "constraint_name": "Material",  # the constraint name that you assigned
+            "constraint_values": ["Aluminium-Generic", "Steel-Generic"],
         },
     ]
 )

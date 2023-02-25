@@ -70,29 +70,49 @@ class FreecadModel:
                 logger.exception(str(e))
                 raise
 
+        # supported specific object types:
+        # <Sketcher::SketchObject>
+        # <App::MaterialObjectPython object>
+
         # FIXME: this should really be done via type checking
+
         try:
-            is_sketch = str(target_object[0]) == "<Sketcher::SketchObject>"
-            if is_sketch:
+            target_str = str(target_object[0])
+
+            # sketcher objects need obj.getDatum / obj.setDatum
+            if target_str == "<Sketcher::SketchObject>":
                 target_object[0].getDatum(constraint_name)
                 logger.debug(f"Object {object_name} is a sketch, found {constraint_name}")
+
+                target_object[0].setDatum(constraint_name, target_value)
+
+            # materials need some special treatment via material cards
+            elif target_str == "<App::MaterialObjectPython object>":
+                from materialtools.cardutils import import_materials as getmats
+                materials, _, _ = getmats(target_object[0].Category)
+
+                for (_, m) in materials.items():
+                    if m["CardName"] == target_value:
+                        target_object[0].Material = m
+                        return
+
+                logger.debug(f"Object {object_name} is a material, "
+                             "setting material {constraint_name}")
+
+            # generic objects need setattr(obj, attr, value)
             else:
                 getattr(target_object[0], constraint_name)
                 logger.debug(
                     f"Object {object_name} is an object, found {constraint_name}"
                     )
 
+                setattr(target_object[0], constraint_name, target_value)
+
         except (NameError, IndexError):
             logger.exception(
                 f"Invalid constraint name {constraint_name} in object {object_name}"
             )
             raise
-
-        # set the datum to the desired value.
-        if is_sketch:
-            target_object[0].setDatum(constraint_name, target_value)
-        else:
-            setattr(target_object[0], constraint_name, target_value)
 
         logger.debug(f"Set {object_name}.{constraint_name} to {target_value}")
         # apply changes and recompute
@@ -155,7 +175,7 @@ class FreecadModel:
             objects = []
             objects.append(self.model.getObject(self.fea_results_name))
             vtkResults.importVTKResults.export(objects, filename)
-            logger.info("Exporting VTK file {filename}")
+            logger.info(f"Exporting VTK file {filename}")
             del objects
         else:
             try:

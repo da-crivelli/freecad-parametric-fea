@@ -34,6 +34,9 @@ class parametric:
 
         self.results_dataframe = pd.DataFrame()
 
+        # initialise output headings to defaults
+        self.set_outputs()
+
     def set_model(self, freecad_document: Union[str, FreecadModel]):
         """opens the freecad document and loads it
 
@@ -261,16 +264,18 @@ class parametric:
         # Build list of n-param values
         grid = np.meshgrid(*param_vals)
         grid_list = list(x.ravel() for x in grid)
-        param_values_ndim = np.column_stack(grid_list)
 
-        empty_results = np.zeros((len(grid_list[0]), len(output_headings) + 1))
-        param_values_all = np.column_stack((param_values_ndim, empty_results))
+        df = pd.DataFrame()
 
-        df = pd.DataFrame(
-            data=param_values_all,
-            columns=[*param_headings, *output_headings, "FEA_runtime"],
-        )
+        for (count, column) in enumerate(param_headings):
+            df[column] = grid_list[count]
+
+        for column in output_headings:
+            df[column] = 0
+
+        # generic empty data
         df["Msg"] = ""
+        df["FEA_Runtime"] = 0
         logger.debug("Empty dataframe created")
         return df
 
