@@ -81,6 +81,20 @@ fea.set_outputs([
     ])
 ```
 
+### Changing materials
+You can specify any material that you can find in the FreeCAD FEA material selection dropdown; just refer to it by its name:
+
+```python
+fea.set_outputs([
+    {
+        "object_name": "MaterialSolid",  # the object where to find the constraint
+        "constraint_name": "Material",  # the constraint name that you assigned
+        "constraint_values": ["Aluminium-Generic", "Steel-Generic"],
+    },
+])
+```
+
+
 ### Exporting data
 
 You can export individual ParaView files using:
