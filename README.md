@@ -105,10 +105,12 @@ results = fea.run_parametric(export_results=True, output_folder="path/to/my/resu
 ```
 
 
-Or just save the results dataframe in a .csv:
+Or just save the results dataframe in a .csv, json or serialised pickle object:
 
 ```python
 fea.save_fea_results("results.csv")
+fea.save_fea_results("results.json", mode="json")
+fea.save_fea_results("results.pickle", mode="pickle")
 ```
 
 ... or even take a look at the parameters matrix before running any analysis:
