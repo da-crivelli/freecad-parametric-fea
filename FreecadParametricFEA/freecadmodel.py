@@ -1,40 +1,17 @@
 """FreecadModel object and helpers"""
-import sys
 import os
 import contextlib
 from .loghandler import logger
 
+from .register_freecad import register_freecad
+
 from typing import Tuple
-
-
-def _register_freecad(freecad_path: str) -> None:
-    """registers the freecad path and femtools in os.PATH
-
-    Args:
-        freecad_path (str): path to the local FreeCAD installation
-
-    Raises:
-        ImportError: if the specified folder does not contain the FreeCAD Python libraries
-    """
-    if freecad_path is not None and freecad_path not in sys.path:
-        sys.path.append(os.path.normpath(freecad_path))
-    # TODO: should automagically try to find freecad in the usual suspect folders;
-    # it should also automatically add /bin if the user didn't specify it
-    try:
-        global FreeCAD, femtools, vtkResults
-        FreeCAD = __import__("FreeCAD", globals(), locals())
-        femtools = __import__("femtools.ccxtools", globals(), locals())
-        vtkResults = __import__("feminout.importVTKResults", globals(), locals())
-    except (ImportError, ModuleNotFoundError):
-        logger.exception(f'"{freecad_path}" does not contain FreeCAD Python libraries')
-        raise
-    logger.debug(f"FreeCAD path added to sys.path: {freecad_path}")
 
 
 class FreecadModel:
     """FreecadModel class"""
 
-    def __init__(self, document_path: str, freecad_path: str) -> None:
+    def __init__(self, document_path: str, freecad_path: str = "") -> None:
         """initialises a FreecadModel object
 
         Args:
@@ -42,7 +19,10 @@ class FreecadModel:
             freecad_path (str): path to the FreeCAD Python libraries
         """
         self.filename = document_path
-        _register_freecad(freecad_path=freecad_path)
+
+        global FreeCAD, femtools, vtkResults
+        (FreeCAD, femtools, vtkResults) = register_freecad(freecad_path=freecad_path)
+
         self.model = FreeCAD.open(document_path)
         logger.debug(f"Opened FreeCAD model {document_path}")
 

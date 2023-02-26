@@ -18,11 +18,13 @@ from .loghandler import logger
 class parametric:
     """FreeCAD Parametric FEA object"""
 
-    def __init__(self, freecad_path: str) -> None:
+    def __init__(self, freecad_path: str = "") -> None:
         """Initialises a FreecadParametricFEA object
 
         Args:
-            freecad_path (str): path to the local FreeCAD installation.
+            freecad_path (str): (optional) path to the local FreeCAD installation.
+                If not set, freecadmodel will make a few attempts at finding it in common
+                locations
 
         """
         self.variables = []
