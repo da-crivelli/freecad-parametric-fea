@@ -25,13 +25,11 @@ Create a FreeCAD part and assign names to the constraints that you want to chang
 Then in a script, or on the command line, run:
 
 ```python
-from FreecadParametricFEA import parametric as pfea
+from FreecadParametricFEA import parametric
 import numpy as np
-# you need to manually specify the path to FreeCAD on your system, for now:
-FREECAD_PATH = "C:/Program Files/FreeCAD 0.20/bin"
 
 # initialise a parametric FEA object
-fea = pfea(freecad_path=FREECAD_PATH)
+fea = parametric()
 
 # load the FreeCAD model
 fea.set_model("your-part-here.fcstd")
@@ -119,10 +117,20 @@ fea.save_fea_results("results.csv")
 results = fea.run_parametric(dry_run=True)
 ```
 
+### Custom FreeCAD path
+If you have multiple installations of FreeCAD or are using a system other than Windows (as of version <=0.3) you have to specify the path to FreeCAD manually in the call to `parametric`:
+
+```python
+# you can manually specify the path to FreeCAD on your system:
+FREECAD_PATH = "C:/Program Files/FreeCAD 0.20/bin"
+fea = parametric(freecad_path=FREECAD_PATH)
+```
 # Limitations and caveats
 
-As of 0.1.2:
- * only netgen meshes are supported
+As of 0.3:
+ * this has been tested on FreeCAD 0.20, on Windows only, but you can try other platforms
+ * only Netgen meshes are supported
+ * Only static FEM analysis has been tested
 
 # Contributing
 I have created this for hobby and personal use, as I was interested in learning more about FreeCAD and writing Python modules. There are a lot of things that I would like to fix, if you want to get involved have a look at the [open issues](https://github.com/da-crivelli/freecad-parametric-fea/issues/) and send me a message if you have any questions.
