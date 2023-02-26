@@ -103,7 +103,7 @@ class FreecadModel:
 
                 logger.debug(
                     f"Object {object_name} is a material, "
-                    "setting material {constraint_name}"
+                    "setting material {constraint_value}"
                 )
 
             # generic objects need setattr(obj, attr, value)
