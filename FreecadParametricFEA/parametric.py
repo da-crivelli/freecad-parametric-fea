@@ -7,6 +7,8 @@ from os import path
 import pandas as pd
 import numpy as np
 
+import pickle
+
 from tqdm import tqdm
 
 import plotly.express as px
@@ -300,12 +302,21 @@ class parametric:
             results_filename (str): destination file
             mode (str, optional): saving mode. Can be one of:
                 "csv" (default): comma separated values, as exported by Pandas
+                "json": json file as exported by Pandas
+                "pickle": .pickle file containing the Pandas dataframe
 
         Raises:
             NotImplementedError: if an export mode is not implemented.
         """
         if mode == "csv":
             self.results_dataframe.to_csv(results_filename)
+        elif mode == "json":
+            self.results_dataframe.to_json(
+                results_filename, lines=True, orient="records"
+            )
+        elif mode == "pickle":
+            with open(results_filename, "wb") as f:
+                pickle.dump(self.results_dataframe, f)
         else:
             raise NotImplementedError(f"Export mode {mode} not yet implemented")
 
