@@ -185,7 +185,7 @@ class parametric:
                         )
 
                     self.results_dataframe.loc[
-                        test_case_idx, "FEA_runtime"
+                        test_case_idx, "FEA_Runtime"
                     ] = fea_runtime  # type: ignore (looks like Pylance's fault)
 
                     # export if requested
