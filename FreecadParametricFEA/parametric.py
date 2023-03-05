@@ -7,6 +7,8 @@ from os import path
 import pandas as pd
 import numpy as np
 
+import pickle
+
 from tqdm import tqdm
 
 import plotly.express as px
@@ -18,11 +20,13 @@ from .loghandler import logger
 class parametric:
     """FreeCAD Parametric FEA object"""
 
-    def __init__(self, freecad_path: str) -> None:
+    def __init__(self, freecad_path: str = "") -> None:
         """Initialises a FreecadParametricFEA object
 
         Args:
-            freecad_path (str): path to the local FreeCAD installation.
+            freecad_path (str): (optional) path to the local FreeCAD installation.
+                If not set, freecadmodel will make a few attempts at finding it in common
+                locations
 
         """
         self.variables = []
@@ -33,6 +37,9 @@ class parametric:
         self.freecad_path = freecad_path
 
         self.results_dataframe = pd.DataFrame()
+
+        # initialise output headings to defaults
+        self.set_outputs()
 
     def set_model(self, freecad_document: Union[str, FreecadModel]):
         """opens the freecad document and loads it
@@ -90,7 +97,7 @@ class parametric:
         else:
             self.outputs = outputs
 
-        logger.debug(f"Analysis outputs set to {outputs}")
+        logger.debug(f"Analysis outputs set to {self.outputs}")
 
     def setup_fea(self, fea_results_name: str, solver_name: str):
         """sets up the FEA analysis object
@@ -101,18 +108,8 @@ class parametric:
             solver_name (str): name of the solver object in the document
                 e.g. SolverCcxTools
         """
-        self.fea_results_name = fea_results_name
-        self.solver_name = solver_name
-
-    def run_fea(self):
-        """Runs the FEM analysis
-        Returns:
-           fea object: a FreeCAD object containing the FEA results
-        """
-        return self.freecad_document.run_fea(
-            solver_name=self.solver_name,
-            fea_results_name=self.fea_results_name,
-        )
+        self.freecad_document.fea_results_name = fea_results_name
+        self.freecad_document.solver_name = solver_name
 
     def run_parametric(
         self,
@@ -172,10 +169,7 @@ class parametric:
                 start_time = time.process_time()
 
                 try:
-                    fea_results_obj = self.freecad_document.run_fea(
-                        solver_name=self.solver_name,
-                        fea_results_name=self.fea_results_name,
-                    )
+                    fea_results_obj = self.freecad_document.run_fea()
                     fea_runtime = time.process_time() - start_time
                     logger.info(f"FEA test case {test_case_idx} ran in {fea_runtime}s")
 
@@ -191,7 +185,7 @@ class parametric:
                         )
 
                     self.results_dataframe.loc[
-                        test_case_idx, "FEA_runtime"
+                        test_case_idx, "FEA_Runtime"
                     ] = fea_runtime  # type: ignore (looks like Pylance's fault)
 
                     # export if requested
@@ -261,16 +255,18 @@ class parametric:
         # Build list of n-param values
         grid = np.meshgrid(*param_vals)
         grid_list = list(x.ravel() for x in grid)
-        param_values_ndim = np.column_stack(grid_list)
 
-        empty_results = np.zeros((len(grid_list[0]), len(output_headings) + 1))
-        param_values_all = np.column_stack((param_values_ndim, empty_results))
+        df = pd.DataFrame()
 
-        df = pd.DataFrame(
-            data=param_values_all,
-            columns=[*param_headings, *output_headings, "FEA_runtime"],
-        )
+        for (count, column) in enumerate(param_headings):
+            df[column] = grid_list[count]
+
+        for column in output_headings:
+            df[column] = 0
+
+        # generic empty data
         df["Msg"] = ""
+        df["FEA_Runtime"] = 0
         logger.debug("Empty dataframe created")
         return df
 
@@ -306,12 +302,21 @@ class parametric:
             results_filename (str): destination file
             mode (str, optional): saving mode. Can be one of:
                 "csv" (default): comma separated values, as exported by Pandas
+                "json": json file as exported by Pandas
+                "pickle": .pickle file containing the Pandas dataframe
 
         Raises:
             NotImplementedError: if an export mode is not implemented.
         """
         if mode == "csv":
             self.results_dataframe.to_csv(results_filename)
+        elif mode == "json":
+            self.results_dataframe.to_json(
+                results_filename, lines=True, orient="records"
+            )
+        elif mode == "pickle":
+            with open(results_filename, "wb") as f:
+                pickle.dump(self.results_dataframe, f)
         else:
             raise NotImplementedError(f"Export mode {mode} not yet implemented")
 
