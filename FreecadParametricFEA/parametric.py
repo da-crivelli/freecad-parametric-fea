@@ -165,7 +165,9 @@ class parametric:
                         target_value=test_case_data[df_heading],
                     )
                 except ValueError as e:
-                    self.results_dataframe.loc[test_case_idx, "Msg"] = str(e)
+                    self.results_dataframe.loc[  # type: ignore (Pylance's fault)
+                        test_case_idx, "Msg"
+                    ] = str(e)
 
             # run (& time) the FEA
             if not dry_run:
