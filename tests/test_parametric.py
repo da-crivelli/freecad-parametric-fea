@@ -19,13 +19,13 @@ def initialise_freecad_object():
 
 
 # test initialisation
-def test_create_freecad_object(initialise_freecad_object):
+def test_create_freecad_object(initialise_freecad_object: parametric):
     # initialise a parametric FEA object
     fea_obj = initialise_freecad_object
     assert type(fea_obj) is parametric
 
 
-def test_single_parametric(initialise_freecad_object):
+def test_single_parametric(initialise_freecad_object: parametric):
     fea_obj = initialise_freecad_object
     fea_obj.set_variables(
         [
@@ -49,10 +49,140 @@ def test_single_parametric(initialise_freecad_object):
     assert results["amax(vonMises)"].max() < 2.1
 
 
+def test_missing_object(initialise_freecad_object: parametric):
+    fea_obj = initialise_freecad_object
+
+    with pytest.raises(KeyError):
+        fea_obj.set_variables(
+            [
+                {
+                    "object_name": "nonexisting_object",
+                    "constraint_name": "HoleDiam",
+                    "constraint_values": (1, 2),
+                },
+            ]
+        )
+        fea_obj.run_parametric(dry_run=True)
+
+
+def test_missing_constraint(initialise_freecad_object: parametric):  #
+    fea_obj = initialise_freecad_object
+
+    with pytest.raises((NameError, IndexError)):
+        fea_obj.set_variables(
+            [
+                {
+                    "object_name": "Sketch",
+                    "constraint_name": "nonexisting_constraint",
+                    "constraint_values": (1, 2),
+                },
+            ]
+        )
+        fea_obj.run_parametric(dry_run=True)
+
+
+def test_breaking_model(initialise_freecad_object: parametric):
+    fea_obj = initialise_freecad_object
+
+    fea_obj.set_variables(
+        [
+            {
+                "object_name": "Sketch",
+                "constraint_name": "HoleDiam",
+                "constraint_values": np.linspace(0, 1, 2),
+            },
+        ]
+    )
+
+    results = fea_obj.run_parametric()
+
+    assert len(results) == 2
+    assert results.loc[0, "Msg"] != ""
+    assert results.loc[1, "Msg"] == ""
+
+
+def test_parametric_material(initialise_freecad_object: parametric):
+    fea_obj = initialise_freecad_object
+
+    fea_obj.set_variables(
+        [
+            {
+                "object_name": "Sketch",  # the object where to find the constraint
+                "constraint_name": "HoleDiam",  # the constraint name that you assigned
+                "constraint_values": np.linspace(
+                    10, 30, 2
+                ),  # the values you want to check
+            },
+            {
+                "object_name": "MaterialSolid",  # the object where to find the constraint
+                "constraint_name": "Material",  # the constraint name that you assigned
+                "constraint_values": ["Aluminium-Generic", "Steel-Generic"],
+            },
+        ]
+    )
+    results = fea_obj.run_parametric()
+    assert len(results) == 4
+    assert results["amax(vonMises)"].max() > 1.9
+    assert results["amax(vonMises)"].max() < 2.1
+    assert results["amax(DisplacementLengths)"].max() < 0.01
+    assert results["amax(DisplacementLengths)"].min() > 0.0001
+
+
+def test_parametric_generic_obj(initialise_freecad_object: parametric):
+    fea_obj = initialise_freecad_object
+
+    fea_obj.set_variables(
+        [
+            {
+                "object_name": "ShellThickness",
+                "constraint_name": "Thickness",
+                "constraint_values": np.linspace(10, 20, 2),
+            },
+        ]
+    )
+
+    results = fea_obj.run_parametric()
+    assert len(results) == 2
+    assert results["amax(vonMises)"].min() < 1
+    assert results["amax(vonMises)"].min() > 0.9
+
+
+def test_custom_outputs(initialise_freecad_object: parametric):
+    fea_obj = initialise_freecad_object
+
+    fea_obj.set_variables(
+        [
+            {
+                "object_name": "ShellThickness",
+                "constraint_name": "Thickness",
+                "constraint_values": np.linspace(10, 20, 2),
+            },
+        ]
+    )
+
+    fea_obj.set_outputs(
+        [
+            {
+                "output_var": "vonMises",
+                "reduction_fun": np.median,
+            },
+            {
+                "output_var": "vonMises",
+                "reduction_fun": lambda v: np.percentile(v, 95),
+                "column_label": "95th percentile",
+            },
+        ]
+    )
+
+    results = fea_obj.run_parametric()
+    assert len(results) == 2
+    assert results["median(vonMises)"].max() < 0.3
+    assert results["median(vonMises)"].max() > 0.2
+    assert results["95th percentile(vonMises)"].max() < 0.9
+    assert results["95th percentile(vonMises)"].max() > 0.7
+
+
 # TODO:
-# - add parameters correctly
-# - add non-existent parameters
-# - add parameters that break the model, e.g. set something to 0
 # - test dry run is full of zeros
 # - test custom outputs
 # - test function outputs
