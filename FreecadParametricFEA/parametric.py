@@ -158,11 +158,16 @@ class parametric:
             for parameter in self.variables:
                 df_heading = self._param_to_df_heading(parameter)
 
-                self.freecad_document.change_parameter(
-                    object_name=parameter["object_name"],
-                    constraint_name=parameter["constraint_name"],
-                    target_value=test_case_data[df_heading],
-                )
+                try:
+                    self.freecad_document.change_parameter(
+                        object_name=parameter["object_name"],
+                        constraint_name=parameter["constraint_name"],
+                        target_value=test_case_data[df_heading],
+                    )
+                except ValueError as e:
+                    self.results_dataframe.loc[  # type: ignore (Pylance's fault)
+                        test_case_idx, "Msg"
+                    ] = str(e)
 
             # run (& time) the FEA
             if not dry_run:
