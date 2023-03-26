@@ -17,16 +17,12 @@ def register_freecad(freecad_path: str = ""):
     """
     supported_platforms = {
         "win32": [
-            "C:/Program Files/FreeCAD *",
-            os.path.expandvars("%LOCALAPPDATA%/Programs/FreeCAD *"),
+            "C:/Program Files/FreeCAD */bin",
+            os.path.expandvars("%LOCALAPPDATA%/Programs/FreeCAD */bin"),
         ],
+        "linux": ["/usr/lib/freecad-python3/lib/"],  # linux
         # "darwin": [] # macOS
-        "linux": [
-            "/usr/lib/freecad-python3/lib/"
-        ] # linux
     }
-
-
 
     if freecad_path is None or freecad_path == "":
         this_platform = sys.platform
@@ -60,9 +56,6 @@ def register_freecad(freecad_path: str = ""):
                 freecad_path = d[0]
                 logger.debug(f"Found FreeCAD at {freecad_path}")
                 break
-
-    #if not freecad_path.endswith("bin"):
-    #    freecad_path = os.path.join(freecad_path, "bin")
 
     if freecad_path not in sys.path:
         sys.path.append(os.path.normpath(freecad_path))
