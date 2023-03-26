@@ -68,6 +68,7 @@ def register_freecad(freecad_path: str = ""):
         sys.path.append(os.path.normpath(freecad_path))
         # these below are needed for linux
         sys.path.append("/usr/lib/freecad/Mod/Fem")
+        sys.path.append("/usr/lib/freecad/Mod/Material")
         sys.path.append("/usr/lib/freecad/Ext")
 
     # TODO: should automagically try to find freecad in the usual suspect folders;
